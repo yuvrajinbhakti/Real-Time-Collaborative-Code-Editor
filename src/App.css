@@ -48,7 +48,8 @@ footer a{
 }
 
 .btn{
-  /* border:none; */
+  border:none;
+  /* code copied by aditya */
   padding:10px;
   border-radius:5px;
   font-size:16px;
