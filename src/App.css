@@ -58,4 +58,30 @@ footer a{
 
 .joinBtn{
   background:#4aee88;
+  width:100px;
+  margin-left:auto;
+}
+
+
+.joinBtn:hover{
+background-color: #2b824c;
+}
+
+
+.createInfo{
+  margin:0 auto;
+  margin-top: 20px;
+}
+
+.createNewBtn{
+  color:#4aee88;
+  text-decoration: none;
+  border-bottom: 1px solid #4aee88 ;
+  transition:all 0.3s ease-in-out;
+}
+
+.createNewBtn:hover,
+ footer a:hover{
+  color:#368654;
+  border-color: #368654;
 }
