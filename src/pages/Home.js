@@ -4,6 +4,7 @@ import {v4 as uuidv4} from 'uuid';
 const Home = () => {
 
   const [roomId,setRoomId]=useState('');
+  const [Username,setUsername]=useState('');
 
     const createNewRoom=(e)=>{
   e.preventDefault();
@@ -20,10 +21,14 @@ const Home = () => {
  <h4 className='mainLabel'>Paste invitation ROOM ID</h4>
 <div className='inputGroup'>
 <input type='text' className='inputBox' placeholder='ROOM ID' 
+onChange={(e)=>setRoomId(e.target.value)}
 value={roomId}
 />
 
-<input type='text' className='inputBox' placeholder='USERNAME' />
+<input type='text' className='inputBox' placeholder='USERNAME' 
+onChange={(e)=>setUsername(e.target.value)}
+value={Username}
+/>
 
 <button className='btn joinBtn'>JOIN</button>
 
