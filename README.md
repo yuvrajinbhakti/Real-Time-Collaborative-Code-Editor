@@ -1,3 +1,14 @@
+# Also run these commands to install
+
+for getting unique id
+npm i uuid
+
+for getting toast
+npm i react-hot-toast    
+
+for avatar of people/client
+npm i react-avatar
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
