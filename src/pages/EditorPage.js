@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import Client from '../components/Client';
-import editor from '../components/editor';
+import Editor from '../components/Editor';
 
 const EditorPage = () => {
   const [clients,setClients]=useState([
@@ -32,7 +32,7 @@ const EditorPage = () => {
         
        </div>
        <div className="editorwrap">
-        <editor/>
+        <Editor/>
        </div>
     </div>
   )

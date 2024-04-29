@@ -9,6 +9,21 @@ npm i react-hot-toast
 for avatar of people/client
 npm i react-avatar
 
+for editor we used codemirror(this is same editor which Codepen uses)
+npm i codemirror@5.65.16
+
+for creating server(we use express)
+npm i express
+
+for web sockets
+npm i sockets.io
+
+for making connection of client
+npm i socket.io-client
+
+for installing nodemon
+npm i nodemon
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
