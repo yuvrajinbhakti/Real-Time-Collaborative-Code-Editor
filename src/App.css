@@ -91,7 +91,7 @@ background-color: #2b824c;
 .mainWrap{
   display: grid;
   grid-template-columns: 230px 1fr;
-  height:100vh;
+  /* height:100vh; */
 }
 .aside{
   background: #1c1e29;
@@ -135,9 +135,11 @@ flex:1;
   width:100%;
 }
 
-.CodeMirror{
+.CodeMirror {
+  /* height: 100vh; */
 min-height:calc(100vh-20px);
-font-size:20px ;
+font-size:20px;
 line-height: 1.6;
+background-color: red;
 padding-top: 20px;
 }
