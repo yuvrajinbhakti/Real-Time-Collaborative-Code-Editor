@@ -23,12 +23,13 @@ const Home = () => {
     }
 
     //redirecting if both username and room id is given
-    else{navigate(`/editor/${roomId}`, {
+  navigate(`/editor/${roomId}`, {
       state: {
         username,
       },
     });
-  }};
+  
+};
 
   const handleInputEnter = (e) => {
     if (e.code === "Enter") {

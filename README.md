@@ -10,7 +10,7 @@ for avatar of people/client
 npm i react-avatar
 
 for editor we used codemirror(this is same editor which Codepen uses)
-npm i codemirror@5.65.16
+npm i codemirror@5.65.2
 
 for creating server(we use express)
 npm i express

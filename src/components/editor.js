@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect , useRef} from "react";
 import Codemirror from "codemirror";
 import "codemirror/theme/dracula.css";
 import "codemirror/lib/codemirror.css";
@@ -7,6 +7,7 @@ import "codemirror/addon/edit/closetag";
 import "codemirror/addon/edit/closebrackets";
 
 const Editor = () => {
+ 
   useEffect(() => {
     async function init() {
       Codemirror.fromTextArea(document.getElementById("realtimeEditor"), {
@@ -23,3 +24,4 @@ const Editor = () => {
 };
 
 export default Editor;
+
