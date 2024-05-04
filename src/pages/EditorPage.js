@@ -52,6 +52,8 @@ setClients(clients);
     }
   );
 
+ 
+
 //Listening for disconnected
 socketRef.current.on(ACTIONS.DISCONNECTED,({socketId,username})=>{
   toast.success(`${username} left the room.`);
@@ -64,14 +66,26 @@ socketRef.current.on(ACTIONS.DISCONNECTED,({socketId,username})=>{
 
     init();
 
-    // return ()=>{
-    //   socketRef.current.off(ACTIONS.JOINED);
-    //   socketRef.current.off(ACTIONS.DISCONNECTED); 
-    //   socketRef.current.disconnect();
-    // };
+    return ()=>{
+      if (socketRef.current) {
+        socketRef.current.off(ACTIONS.JOINED);
+        socketRef.current.off(ACTIONS.DISCONNECTED); 
+        socketRef.current.disconnect();
+      }
+    };
 
   }, []);
   
+  async function copyRoomId(){
+    try{
+      await navigator.clipboard.writeText(roomId);
+      toast.success('Room Id has been copied to your clipboard');
+    }
+    catch(err){
+      toast.error('Could not copy the Room Id.');
+      console.log(err);
+    }
+      };
 
   if(!location.state){
 return  <Navigate to="/" />;
@@ -92,11 +106,11 @@ return  <Navigate to="/" />;
             }
           </div>
         </div>
-        <button className="btn copyBtn">Copy ROOM ID</button>
+        <button className="btn copyBtn" onClick={copyRoomId} >Copy ROOM ID</button>
         <button className="btn leaveBtn">Leave</button>
       </div>
       <div className="editorwrap">
-        <Editor />
+        <Editor socketRef={socketRef} roomId={roomId} />
       </div>
     </div>
   );
