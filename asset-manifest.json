@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/yuvrajinbhakti/Real-Time-Collaborative-Code-Editor/static/css/main.5b1ffe7d.css",
+    "main.js": "/yuvrajinbhakti/Real-Time-Collaborative-Code-Editor/static/js/main.c6cedb27.js",
+    "static/js/787.4a5f9ec1.chunk.js": "/yuvrajinbhakti/Real-Time-Collaborative-Code-Editor/static/js/787.4a5f9ec1.chunk.js",
+    "index.html": "/yuvrajinbhakti/Real-Time-Collaborative-Code-Editor/index.html",
+    "main.5b1ffe7d.css.map": "/yuvrajinbhakti/Real-Time-Collaborative-Code-Editor/static/css/main.5b1ffe7d.css.map",
+    "main.c6cedb27.js.map": "/yuvrajinbhakti/Real-Time-Collaborative-Code-Editor/static/js/main.c6cedb27.js.map",
+    "787.4a5f9ec1.chunk.js.map": "/yuvrajinbhakti/Real-Time-Collaborative-Code-Editor/static/js/787.4a5f9ec1.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5b1ffe7d.css",
+    "static/js/main.c6cedb27.js"
+  ]
+}
