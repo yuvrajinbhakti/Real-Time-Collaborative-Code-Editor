@@ -1,3 +1,4 @@
+//this is the editor page
 import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import ACTIONS from '../Actions';
