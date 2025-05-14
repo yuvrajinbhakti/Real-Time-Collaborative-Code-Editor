@@ -6,7 +6,12 @@ const { Server } = require('socket.io');
 const ACTIONS = require('./src/Actions');
 
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'production' ? false : ['http://localhost:3000', 'http://localhost:5000'],
+    methods: ['GET', 'POST']
+  }
+});
 
 app.use(express.static('build'));
 app.use((req, res, next) => {
@@ -64,4 +69,9 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+if (process.env.NODE_ENV !== 'production') {
+    server.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+}
+
+// Export the app and server for Vercel
+module.exports = app;
