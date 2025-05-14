@@ -13,6 +13,11 @@ const io = new Server(server, {
   }
 });
 
+// API routes
+app.get('/api/status', (req, res) => {
+  res.json({ status: 'online', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
+});
+
 app.use(express.static('build'));
 app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -69,9 +74,18 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// For local development
 if (process.env.NODE_ENV !== 'production') {
     server.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+} 
+// For Vercel serverless deployment
+else {
+    // This will be used by Vercel
+    console.log('Running in production mode');
 }
 
-// Export the app and server for Vercel
+// Export both app and server for Vercel
 module.exports = app;
+// Also attach server to app for Socket.IO functionality
+app.server = server;
