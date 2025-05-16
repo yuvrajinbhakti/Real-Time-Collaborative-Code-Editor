@@ -6,12 +6,11 @@ export const initSocket = async () => {
         reconnectionAttempt: 'Infinity',
         timeout: 10000,
         transports: ['websocket'],
+        path: '/socket.io/'
     };
     
     // In production, use the current URL (hostname) as the WebSocket server
-    const backendURL = process.env.NODE_ENV === 'production' 
-        ? window.location.origin 
-        : process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    const backendURL = window.location.origin;
     
     console.log('Connecting to Socket.IO at:', backendURL);
     return io(backendURL, options);

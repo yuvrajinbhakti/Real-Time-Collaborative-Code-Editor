@@ -1,26 +1,16 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "server.js", "use": "@vercel/node" },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "framework": "create-react-app",
+  "functions": {
+    "api/**/*.js": {
+      "memory": 1024
     }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "server.js" },
-    {
-      "src": "/socket.io/(.*)",
-      "dest": "server.js",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "X-Requested-With, Content-Type, Accept"
-      }
-    },
-    { "src": "/(.*)", "dest": "server.js" }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/socket.io/(.*)", "destination": "/api/socket.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
