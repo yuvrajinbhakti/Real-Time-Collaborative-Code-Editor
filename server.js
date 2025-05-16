@@ -18,9 +18,24 @@ app.get('/api/status', (req, res) => {
   res.json({ status: 'online', mode: process.env.NODE_ENV, timestamp: new Date().toISOString() });
 });
 
-app.use(express.static('build'));
+// Determine the correct build folder path
+// In Vercel serverless environment, we need a different path
+const buildPath = process.env.NODE_ENV === 'production' 
+  ? path.join(process.cwd(), '.vercel/output/static') 
+  : path.join(__dirname, 'build');
+
+console.log('Build path:', buildPath);
+
+app.use(express.static(buildPath));
 app.use((req, res, next) => {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  try {
+    const indexPath = path.join(buildPath, 'index.html');
+    console.log('Trying to serve index from:', indexPath);
+    res.sendFile(indexPath);
+  } catch (err) {
+    console.error('Error serving index.html:', err);
+    res.status(500).send('Error loading application');
+  }
 });
 
 const userSocketMap = {};
