@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "ls -la src/ && ls -la src/components/ && npm run build",
+  "buildCommand": "./vercel-build.sh",
   "outputDirectory": "build",
   "framework": "create-react-app",
   "functions": {

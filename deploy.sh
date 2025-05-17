@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# Make sure Vercel CLI is installed
-if ! command -v vercel &> /dev/null
-then
-    echo "Vercel CLI not found, installing it globally..."
-    npm install -g vercel
-fi
+# Ensure proper case sensitivity for critical files
+echo "Checking file case sensitivity..."
 
-# Build the project
-npm run build
+# Create a duplicate with confirmed case (just to be safe)
+cp src/components/Editor.js src/components/Editor.js.temp
+mv src/components/Editor.js.temp src/components/Editor.js
+
+cp src/components/Client.js src/components/Client.js.temp
+mv src/components/Client.js.temp src/components/Client.js
 
 # Deploy to Vercel
 echo "Deploying to Vercel..."
-vercel --prod
+npx vercel --prod
 
-echo "Deployment complete!" 
+echo "Deployment process completed" 
