@@ -1,0 +1,1243 @@
+/* Premium Enterprise Dashboard CSS - Ultimate Version 2.0 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+    /* Ultra-premium color system with extended palette */
+    --brand-primary: #4361ee;
+    --brand-primary-rgb: 67, 97, 238;
+    --brand-secondary: #3f37c9;
+    --brand-tertiary: #4895ef;
+    --brand-light: #4cc9f0;
+    --brand-dark: #3a0ca3;
+    --brand-accent: #f72585;
+    --brand-accent-rgb: 247, 37, 133;
+    --brand-success: #0cce6b;
+    --brand-success-rgb: 12, 206, 107;
+    --brand-gradient: linear-gradient(135deg, #4361ee, #4895ef);
+    --brand-gradient-vibrant: linear-gradient(135deg, #4361ee, #f72585);
+    --brand-gradient-success: linear-gradient(135deg, #4cc9f0, #0cce6b);
+
+    /* Enterprise alert colors refined */
+    --success: #0cce6b;
+    --success-rgb: 12, 206, 107;
+    --warning: #ff9800;
+    --warning-rgb: 255, 152, 0;
+    --danger: #f72585;
+    --danger-rgb: 247, 37, 133;
+    --info: #4cc9f0;
+    --info-rgb: 76, 201, 240;
+
+    /* Enhanced neutrals with expanded range */
+    --grey-50: #fafafa;
+    --grey-100: #f4f5f7;
+    --grey-200: #e5e7eb;
+    --grey-300: #d1d5db;
+    --grey-400: #9ca3af;
+    --grey-500: #6b7280;
+    --grey-600: #4b5563;
+    --grey-700: #374151;
+    --grey-800: #1f2937;
+    --grey-900: #111827;
+    --grey-950: #0a0c10;
+
+    /* Advanced layered shadows for rich depth */
+    --shadow-sm: 0 2px 8px rgba(67, 97, 238, 0.07), 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow: 0 4px 12px rgba(67, 97, 238, 0.1), 0 2px 4px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 6px 16px rgba(67, 97, 238, 0.12), 0 3px 6px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 12px 24px rgba(67, 97, 238, 0.15), 0 5px 10px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 30px rgba(var(--brand-primary-rgb), 0.08), 0 10px 20px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px rgba(var(--brand-primary-rgb), 0.12), 0 15px 30px rgba(0, 0, 0, 0.06);
+    --shadow-inner: inset 0 2px 4px rgba(var(--brand-primary-rgb), 0.03);
+    --shadow-focus: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.2);
+
+    /* Premium typography system */
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-display: var(--font-sans);
+
+    /* Layout & Spacing refinements */
+    --card-radius: 8px;
+    --card-radius-sm: 5px;
+    --card-radius-lg: 10px;
+    --btn-radius: 4px;
+    --input-radius: 5px;
+    --base-duration: 0.2s;
+    --base-timing: cubic-bezier(0.16, 1, 0.3, 1);
+    --premium-timing: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Glass morphism variables */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-bg-dark: rgba(31, 41, 55, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-border-dark: rgba(255, 255, 255, 0.05);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    --glass-blur: 10px;
+}
+
+/* Global optimizations with enhanced performance */
+html {
+    scroll-behavior: smooth;
+    height: 100%;
+    font-size: 16px;
+}
+
+body {
+    background: #ffffff !important;
+    color: var(--grey-800);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    width: 100%;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    line-height: 1.5;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    transition: background-color 0.3s var(--base-timing);
+    background-image:
+        radial-gradient(circle at 20% 35%, rgba(var(--brand-primary-rgb), 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 75% 44%, rgba(var(--brand-accent-rgb), 0.02) 0%, transparent 60%);
+    background-attachment: fixed;
+}
+
+/* Enhanced container adjustments */
+#app,
+.app-container,
+.dashboard,
+#dashboard,
+.superset-body,
+#superset-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    will-change: transform;
+    contain: layout style paint;
+    isolation: isolate;
+}
+
+/* Hide sidebar and navigation with higher specificity */
+.css-z133oh,
+.css-1bl3vr5,
+div[data-test="filter-bar"],
+button[data-test="filter-bar__clear-button"],
+#app-menu,
+.sidebar,
+.navbar-brand,
+nav.navbar,
+.sidebar-container,
+aside.sidebar,
+.side-panel,
+.left-sidebar,
+div[class*="sidebar"],
+div[id*="sidebar"] {
+    display: none !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    pointer-events: none !important;
+}
+
+/* Maximize content area with enhanced performance */
+.grid-container,
+.dashboard-content,
+.main-content,
+#main-content,
+.content-wrapper,
+.container-fluid,
+div[class*="content-container"],
+div[class*="main-panel"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    contain: layout;
+}
+
+/* Ultra-premium chart cards with glass morphism */
+.dashboard-component-chart-holder {
+    border-radius: var(--card-radius) !important;
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(var(--glass-blur)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+    box-shadow: var(--shadow-lg) !important;
+    transition: all 0.3s var(--premium-timing) !important;
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.08) !important;
+    overflow: hidden !important;
+    position: relative;
+    z-index: 1;
+}
+
+.dashboard-component-chart-holder:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: var(--shadow-xl) !important;
+    border-color: rgba(var(--brand-primary-rgb), 0.15) !important;
+}
+
+.dashboard-component-chart-holder:active {
+    transform: translateY(0) scale(0.995);
+    transition: all 0.2s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* Layered card design with subtle pattern */
+.dashboard-component-chart-holder::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    background: var(--brand-primary);
+    opacity: 0.85;
+    transition: all 0.3s var(--base-timing);
+    z-index: 2;
+}
+
+.dashboard-component-chart-holder::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%234361ee' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.dashboard-component-chart-holder:hover::before {
+    height: 5px;
+    opacity: 1;
+}
+
+/* Enhanced card glow effect on hover */
+.dashboard-component-chart-holder:hover {
+    box-shadow:
+        0 20px 30px rgba(var(--brand-primary-rgb), 0.2),
+        0 0 0 1px rgba(var(--brand-primary-rgb), 0.1),
+        0 0 0 5px rgba(var(--brand-primary-rgb), 0.03) !important;
+}
+
+/* Advanced radial gradient hover effect */
+.dashboard-component-chart-holder::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right,
+            rgba(var(--brand-primary-rgb), 0.07),
+            rgba(var(--brand-primary-rgb), 0.03) 40%,
+            transparent 70%);
+    opacity: 0;
+    transition: opacity 0.4s var(--base-timing);
+    pointer-events: none;
+    mix-blend-mode: soft-light;
+}
+
+.dashboard-component-chart-holder:hover::after {
+    opacity: 1;
+}
+
+/* Ultra-premium card header with glass morphism */
+.header-title {
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    color: var(--grey-700) !important;
+    border-bottom: 1px solid var(--grey-200);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    pointer-events: auto !important;
+    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.8);
+    position: relative;
+    overflow: hidden;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+}
+
+/* Ultra-premium 3D tab styling with depth and layering */
+.ant-tabs {
+    margin-top: 5px;
+    --tab-active-glow: 0 0 20px rgba(var(--brand-primary-rgb), 0.25);
+    --tab-hover-glow: 0 0 15px rgba(var(--brand-primary-rgb), 0.2);
+}
+
+.ant-tabs-nav {
+    margin-bottom: 7px !important;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: 8px;
+    padding: 3px;
+    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+    position: relative;
+    z-index: 5;
+    perspective: 1000px;
+    transform-style: preserve-3d;
+}
+
+.ant-tabs-tab {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: var(--grey-600) !important;
+    border-radius: 5px !important;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    margin: 0 3px !important;
+    box-shadow: var(--shadow-sm), 0 1px 0 rgba(255, 255, 255, 0.7) inset !important;
+    position: relative;
+    overflow: hidden;
+    transform-style: preserve-3d;
+    perspective: 800px;
+    backface-visibility: hidden;
+    transform-origin: center;
+}
+
+.ant-tabs-tab:hover {
+    color: var(--brand-primary) !important;
+    background: linear-gradient(135deg, white, rgba(67, 97, 238, 0.08), white) !important;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow:
+        0 10px 20px -5px rgba(var(--brand-primary-rgb), 0.25),
+        0 5px 10px rgba(0, 0, 0, 0.05),
+        0 0 0 1px rgba(var(--brand-primary-rgb), 0.1) inset,
+        0 1px 0 rgba(255, 255, 255, 0.9) inset !important;
+    z-index: 2;
+    letter-spacing: 0.01em;
+    font-weight: 700 !important;
+}
+
+/* Ultra premium animated border effect */
+.ant-tabs-tab::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    padding: 1px;
+    background: rgba(var(--brand-primary-rgb), 0.4);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: scale(1.1);
+}
+
+.ant-tabs-tab:hover::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Advanced shine effect with premium timing function */
+.ant-tabs-tab::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+            transparent,
+            rgba(255, 255, 255, 0) 20%,
+            rgba(255, 255, 255, 0.9) 45%,
+            rgba(255, 255, 255, 0) 80%,
+            transparent);
+    transition: all 0.5s ease-out;
+    opacity: 0;
+    z-index: 1;
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    background-size: 200% 200%;
+}
+
+.ant-tabs-tab:hover::before {
+    animation: premiumShine 1.8s cubic-bezier(0.19, 1, 0.22, 1) infinite;
+    opacity: 1;
+}
+
+@keyframes premiumShine {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+        opacity: 0;
+    }
+}
+
+/* Advanced 3D lift effect with depth shadows */
+.ant-tabs-nav {
+    perspective: 1200px;
+}
+
+/* Ultra premium pulse effect for the tab text */
+.ant-tabs-tab .ant-tabs-tab-btn {
+    position: relative;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.ant-tabs-tab:hover .ant-tabs-tab-btn {
+    animation: subtlePulse 1.5s ease-in-out infinite alternate;
+    background: var(--brand-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+}
+
+@keyframes subtlePulse {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(1.05);
+    }
+}
+
+/* Ultra premium active tab styling with glass morphism */
+.ant-tabs-tab-active {
+    color: white !important;
+    background: var(--brand-primary) !important;
+    box-shadow:
+        0 6px 20px -5px rgba(67, 97, 238, 0.4),
+        0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-2px);
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+    color: white !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+/* Create a beautiful active indicator with animation */
+.ant-tabs-tab-active::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Ultra premium tab indicator with animation */
+.ant-tabs-ink-bar {
+    background: var(--brand-primary) !important;
+    height: 4px !important;
+    border-radius: 4px !important;
+    bottom: 4px !important;
+    box-shadow: 0 0 10px rgba(var(--brand-primary-rgb), 0.5);
+    transition: all 0.4s var(--premium-timing) !important;
+}
+
+/* Table styling - ultra premium with glass morphism */
+table {
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    margin-top: 0 !important;
+    border: none !important;
+    box-shadow: var(--shadow-lg) !important;
+    font-size: 10px !important;
+    border-radius: 0 !important;
+    overflow: hidden;
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(var(--glass-blur)) !important;
+}
+
+table thead {
+    background: rgba(var(--brand-primary-rgb), 0.05) !important;
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+table th {
+    padding: 1px 3px !important;
+    font-size: 14px !important;
+    color: var(--brand-primary) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.12) !important;
+    white-space: nowrap;
+    position: relative;
+    background: rgba(var(--brand-primary-rgb), 0.03) !important;
+    line-height: 1.3 !important;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Premium table header separators */
+table th:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 25%;
+    height: 50%;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, var(--grey-300), transparent);
+    opacity: 0.3;
+}
+
+table td {
+    padding: 1px 3px !important;
+    font-size: 12px !important;
+    color: var(--grey-700) !important;
+    border-bottom: 1px solid rgba(var(--brand-primary-rgb), 0.06) !important;
+    transition: all 0.15s ease;
+    line-height: 1.4 !important;
+}
+
+/* Ultra premium table row hover effect */
+table tbody tr {
+    transition: all 0.25s var(--base-timing);
+    border-radius: 0;
+}
+
+table tbody tr:hover {
+    background: linear-gradient(to right, transparent, rgba(var(--brand-primary-rgb), 0.04), transparent) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px -3px rgba(var(--brand-primary-rgb), 0.1);
+}
+
+/* Ultra optimized data visualization styling */
+.chart-container,
+.echarts-for-react,
+.recharts-wrapper {
+    padding: 3px !important;
+    margin: 0 !important;
+    contain: content;
+}
+
+/* SVG optimizations with premium effects */
+svg.nvd3-svg,
+.echarts-container svg,
+.recharts-wrapper svg {
+    overflow: visible !important;
+    will-change: transform;
+    filter: drop-shadow(0 4px 6px rgba(var(--brand-primary-rgb), 0.15));
+}
+
+svg .line {
+    stroke-width: 2.5px !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
+/* Premium chart animation with dynamic depth */
+.chart-container svg path,
+.recharts-wrapper svg path,
+.nvd3-svg path {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Axis styling for premium look */
+svg .domain,
+svg .axis line {
+    stroke: rgba(var(--brand-primary-rgb), 0.1) !important;
+    stroke-width: 1px !important;
+}
+
+svg .axis text {
+    fill: var(--grey-600) !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+}
+
+/* Enhanced grid lines */
+svg .grid line {
+    stroke: rgba(var(--brand-primary-rgb), 0.04) !important;
+    stroke-dasharray: 3, 3 !important;
+}
+
+/* Advanced bar styling with glass effect */
+svg .bar rect {
+    fill: rgba(var(--brand-primary-rgb), 0.7) !important;
+    stroke: rgba(var(--brand-primary-rgb), 0.9) !important;
+    stroke-width: 1px !important;
+    rx: 2px !important;
+}
+
+svg .bar:hover rect {
+    fill: rgba(var(--brand-primary-rgb), 0.9) !important;
+    filter: brightness(1.1) !important;
+}
+
+/* Enhanced interactivity for data points */
+svg circle.dot,
+svg .point {
+    transition: all 0.3s var(--premium-timing) !important;
+    stroke-width: 2px !important;
+    stroke: white !important;
+}
+
+svg circle.dot:hover,
+svg .point:hover {
+    transform: scale(1.5) !important;
+    stroke-width: 3px !important;
+    z-index: 10 !important;
+    stroke: white !important;
+    filter: drop-shadow(0 0 5px rgba(var(--brand-primary-rgb), 0.5)) !important;
+}
+
+/* Ultra premium legend styling */
+.legend-item {
+    padding: 3px 8px !important;
+    margin: 2px !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s var(--base-timing);
+    background: rgba(255, 255, 255, 0.8) !important;
+    box-shadow: var(--shadow-sm) !important;
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.1) !important;
+}
+
+.legend-item:hover {
+    background: var(--glass-bg) !important;
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow) !important;
+    border-color: rgba(var(--brand-primary-rgb), 0.15) !important;
+}
+
+/* KPI number styling - ultra luxurious effect */
+#chart-id-32 .header-line,
+#chart-id-33 .header-line,
+#chart-id-31 .header-line,
+#chart-id-34 .header-line {
+    font-weight: 600 !important;
+    background: var(--brand-primary);
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px !important;
+    animation: gradientFlow 6s ease infinite alternate;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.1));
+}
+
+/* Ultra premium input field styling */
+input,
+select,
+textarea {
+    padding: 12px 18px !important;
+    border-radius: var(--input-radius) !important;
+    border: 2px solid rgba(var(--brand-primary-rgb), 0.15) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    transition: all 0.25s var(--premium-timing) !important;
+    box-shadow: var(--shadow-sm), 0 0 0 3px rgba(var(--brand-primary-rgb), 0.01) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(4px) !important;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.25) !important;
+    box-shadow: var(--shadow), 0 0 0 4px rgba(var(--brand-primary-rgb), 0.03) !important;
+    transform: translateY(-1px);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 4px rgba(var(--brand-primary-rgb), 0.15) !important;
+    outline: none !important;
+    transform: translateY(-2px);
+}
+
+/* Premium checkbox styling with animations */
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid rgba(var(--brand-primary-rgb), 0.3) !important;
+    background: white;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s var(--premium-timing);
+}
+
+input[type="checkbox"]:checked {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary) !important;
+}
+
+input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 6px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    animation: checkmarkAnimation 0.2s ease-in-out;
+}
+
+@keyframes checkmarkAnimation {
+    0% {
+        opacity: 0;
+        transform: rotate(45deg) scale(0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: rotate(45deg) scale(1);
+    }
+}
+
+/* Premium radio button styling */
+input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(var(--brand-primary-rgb), 0.3) !important;
+    background: white;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s var(--premium-timing);
+}
+
+input[type="radio"]:checked {
+    border-color: var(--brand-primary) !important;
+    border-width: 2px !important;
+}
+
+input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    animation: radioAnimation 0.2s var(--premium-timing);
+}
+
+@keyframes radioAnimation {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Enhanced button styling with glass morphism */
+button,
+.btn {
+    padding: 12px 22px !important;
+    border-radius: var(--btn-radius) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    transition: all 0.25s var(--premium-timing) !important;
+    cursor: pointer !important;
+    position: relative;
+    overflow: hidden;
+}
+
+button.primary,
+.btn-primary {
+    background: var(--brand-primary) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow:
+        0 6px 15px -3px rgba(var(--brand-primary-rgb), 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+}
+
+button.primary:hover,
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 25px -5px rgba(var(--brand-primary-rgb), 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset !important;
+}
+
+button.primary:active,
+.btn-primary:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow:
+        0 2px 10px -2px rgba(var(--brand-primary-rgb), 0.3),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset !important;
+}
+
+/* Button shine effect */
+button.primary::after,
+.btn-primary::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to bottom right,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0) 40%,
+            rgba(255, 255, 255, 0.4) 50%,
+            rgba(255, 255, 255, 0) 60%,
+            rgba(255, 255, 255, 0) 100%);
+    transform: rotate(45deg);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+button.primary:hover::after,
+.btn-primary:hover::after {
+    animation: buttonShine 1.2s ease forwards;
+}
+
+@keyframes buttonShine {
+    0% {
+        opacity: 0;
+        transform: scale(0.5) rotate(45deg) translateY(-60px);
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1) rotate(45deg) translateY(60px);
+    }
+}
+
+/* Enhanced dark mode support with glass morphism */
+@media (prefers-color-scheme: dark) {
+    body.theme-auto {
+        background: var(--grey-950) !important;
+        color: var(--grey-200);
+        background-image:
+            radial-gradient(circle at 20% 35%, rgba(var(--brand-primary-rgb), 0.08) 0%, transparent 70%),
+            radial-gradient(circle at 75% 44%, rgba(var(--brand-accent-rgb), 0.05) 0%, transparent 70%);
+    }
+
+    body.theme-auto .dashboard-component-chart-holder {
+        background: var(--glass-bg-dark) !important;
+        box-shadow: var(--shadow-lg), 0 0 0 1px var(--glass-border-dark) inset !important;
+    }
+
+    body.theme-auto .header-title {
+        color: var(--grey-200) !important;
+        border-bottom-color: var(--grey-700);
+        background: var(--glass-bg-dark);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    body.theme-auto .ant-tabs-nav {
+        background: rgba(31, 41, 55, 0.7) !important;
+        box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    }
+
+    body.theme-auto .ant-tabs-tab {
+        background: rgba(41, 51, 65, 0.8) !important;
+        color: var(--grey-300) !important;
+        box-shadow: var(--shadow-sm), 0 1px 0 rgba(255, 255, 255, 0.03) inset !important;
+    }
+
+    body.theme-auto table {
+        background: var(--glass-bg-dark) !important;
+    }
+
+    body.theme-auto table thead {
+        background: rgba(var(--brand-primary-rgb), 0.15) !important;
+    }
+
+    body.theme-auto table th {
+        color: var(--grey-200) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    body.theme-auto table td {
+        color: var(--grey-300) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    body.theme-auto input,
+    body.theme-auto select,
+    body.theme-auto textarea {
+        background: rgba(41, 51, 65, 0.8) !important;
+        color: var(--grey-200) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    body.theme-auto .chart-tooltip,
+    body.theme-auto .nvtooltip,
+    body.theme-auto .echarts-tooltip,
+    body.theme-auto .recharts-tooltip-wrapper,
+    body.theme-auto [class*="tooltip-container"] {
+        background: rgba(31, 41, 55, 0.95) !important;
+        color: var(--grey-200) !important;
+        box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+    }
+}
+
+/* Premium image/avatar styling */
+img,
+.avatar,
+.profile-img {
+    border-radius: 8px;
+    object-fit: cover;
+    transition: transform 0.3s var(--premium-timing);
+    box-shadow: var(--shadow-sm);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+img:hover,
+.avatar:hover,
+.profile-img:hover {
+    transform: scale(1.03);
+    box-shadow: var(--shadow-md), 0 0 0 2px rgba(var(--brand-primary-rgb), 0.2);
+}
+
+/* Ultra-premium tooltip styling with glass morphism */
+.chart-tooltip,
+.nvtooltip,
+.echarts-tooltip,
+.recharts-tooltip-wrapper,
+[class*="tooltip-container"] {
+    max-width: 550px !important;
+    max-height: 450px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 10px !important;
+    border-radius: var(--card-radius) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow:
+        var(--shadow-xl),
+        0 0 0 1px rgba(67, 97, 238, 0.1),
+        0 0 0 4px rgba(67, 97, 238, 0.02) !important;
+    border: none !important;
+    z-index: 9999 !important;
+    transition:
+        opacity 0.3s var(--premium-timing),
+        visibility 0.3s var(--premium-timing) !important;
+    pointer-events: auto !important;
+    /* Make the tooltip interactive */
+    display: block !important;
+    opacity: 1 !important;
+    transform: translateY(0) scale(1);
+    transform-origin: top center;
+    transition-delay: 0s;
+    /* No delay when showing */
+}
+
+/* Ensure tooltip can be interacted with */
+.chart-tooltip:hover,
+.nvtooltip:hover,
+.echarts-tooltip:hover,
+.recharts-tooltip-wrapper:hover,
+[class*="tooltip-container"]:hover {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+    transition-delay: 0s;
+    /* No delay when actively hovering tooltip */
+    pointer-events: auto !important;
+}
+
+/* Apply delay when hovering away from tooltip */
+.chart-container:hover .chart-tooltip,
+.chart-container:hover .nvtooltip,
+.chart-container:hover .echarts-tooltip,
+.chart-container:hover .recharts-tooltip-wrapper,
+.chart-container:hover [class*="tooltip-container"],
+.slice_container:hover .chart-tooltip,
+.slice_container:hover .nvtooltip,
+.slice_container:hover .echarts-tooltip,
+.slice_container:hover .recharts-tooltip-wrapper,
+.slice_container:hover [class*="tooltip-container"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    transition-delay: 0s;
+    /* Show immediately on hover */
+    pointer-events: auto !important;
+}
+
+/* Keep tooltip visible for a moment after hover ends */
+.chart-container .chart-tooltip,
+.chart-container .nvtooltip,
+.chart-container .echarts-tooltip,
+.chart-container .recharts-tooltip-wrapper,
+.chart-container [class*="tooltip-container"],
+.slice_container .chart-tooltip,
+.slice_container .nvtooltip,
+.slice_container .echarts-tooltip,
+.slice_container .recharts-tooltip-wrapper,
+.slice_container [class*="tooltip-container"] {
+    transition-delay: 0.5s;
+    /* Delay disappearance by 500ms */
+}
+
+/* Make tooltip content clickable and scrollable */
+.chart-tooltip *,
+.nvtooltip *,
+.echarts-tooltip *,
+.recharts-tooltip-wrapper *,
+[class*="tooltip-container"] * {
+    pointer-events: auto !important;
+}
+
+/* Fix z-index stacking for tooltips */
+.dashboard-component-chart-holder:hover {
+    z-index: 10 !important;
+}
+
+/* Fix chart hover behavior */
+.chart-container,
+.slice_container,
+.dashboard-component-chart-holder {
+    isolation: isolate;
+}
+
+/* Date range picker premium styling */
+.date-range-selector {
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(var(--glass-blur)) !important;
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.1) !important;
+    box-shadow: var(--shadow) !important;
+    transition: all 0.2s var(--premium-timing);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-range-selector:hover {
+    border-color: rgba(var(--brand-primary-rgb), 0.2) !important;
+    box-shadow: var(--shadow-md) !important;
+    transform: translateY(-1px);
+}
+
+.date-range-selector:focus,
+.date-range-selector:active {
+    border-color: var(--brand-primary) !important;
+    box-shadow: 0 0 0 3px rgba(var(--brand-primary-rgb), 0.15) !important;
+    outline: none !important;
+}
+
+/* Ultra premium calendar styling */
+.calendar-container,
+.datepicker-container,
+.rdrDateRangePickerWrapper,
+.rdrCalendarWrapper {
+    border-radius: var(--card-radius) !important;
+    overflow: hidden !important;
+    box-shadow: var(--shadow-xl) !important;
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.1) !important;
+    background: white !important;
+}
+
+.calendar-day,
+.rdrDay {
+    transition: all 0.2s var(--base-timing) !important;
+}
+
+.calendar-day:hover,
+.rdrDay:hover {
+    background: rgba(var(--brand-primary-rgb), 0.1) !important;
+    transform: scale(1.1) !important;
+}
+
+.calendar-day.selected,
+.rdrDayStartPreview,
+.rdrDayEndPreview,
+.rdrDayStartOfMonth,
+.rdrDayEndOfMonth {
+    background: var(--brand-primary) !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+/* Perfect scrollbar styling */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(var(--brand-primary-rgb), 0.03);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(var(--brand-primary-rgb), 0.3);
+    border-radius: 10px;
+    border: 2px solid white;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--brand-primary-rgb), 0.4);
+    border-width: 1px;
+}
+
+/* Loading states with animation */
+.loading-indicator {
+    background: conic-gradient(rgba(var(--brand-primary-rgb), 0.1),
+            rgba(var(--brand-primary-rgb), 1),
+            rgba(var(--brand-primary-rgb), 0.1));
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: relative;
+    animation: rotate 1.5s linear infinite;
+}
+
+.loading-indicator::after {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    background: white;
+    border-radius: 50%;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Neuomorphic accent for special elements */
+.premium-element,
+.special-card {
+    border-radius: 12px;
+    background: white;
+    box-shadow:
+        10px 10px 20px rgba(var(--brand-primary-rgb), 0.07),
+        -10px -10px 20px rgba(255, 255, 255, 0.7),
+        inset 0 0 0 1px rgba(var(--brand-primary-rgb), 0.05);
+    transition: all 0.3s var(--premium-timing);
+}
+
+.premium-element:hover,
+.special-card:hover {
+    box-shadow:
+        12px 12px 24px rgba(var(--brand-primary-rgb), 0.1),
+        -12px -12px 24px rgba(255, 255, 255, 0.8),
+        inset 0 0 0 1px rgba(var(--brand-primary-rgb), 0.08);
+}
+
+/* Print optimizations */
+@media print {
+    .dashboard-component-chart-holder {
+        box-shadow: none !important;
+        border: 1px solid var(--grey-300) !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    body {
+        background: white !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* Additional enterprise-grade enhancements for data filtering components */
+.filter-tag,
+.tag,
+.badge {
+    padding: 6px 14px !important;
+    border-radius: 30px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(var(--glass-blur)) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+    color: var(--brand-primary) !important;
+    border: 1px solid rgba(var(--brand-primary-rgb), 0.15) !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: all 0.25s var(--premium-timing) !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-tag:hover,
+.tag:hover,
+.badge:hover {
+    background: rgba(var(--brand-primary-rgb), 0.08) !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow) !important;
+    border-color: rgba(var(--brand-primary-rgb), 0.25) !important;
+}
+
+/* Premium filter tag with close icon */
+.filter-tag .close,
+.tag .close,
+.badge .close {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--brand-primary-rgb), 0.1);
+    color: var(--brand-primary);
+    font-size: 10px;
+    margin-left: 4px;
+    transition: all 0.2s ease;
+}
+
+.filter-tag .close:hover,
+.tag .close:hover,
+.badge .close:hover {
+    background: rgba(var(--brand-primary-rgb), 0.2);
+    transform: scale(1.1);
+}
+
+/* Accessibility improvements with focus visible */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--brand-primary) !important;
+    outline-offset: 2px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
