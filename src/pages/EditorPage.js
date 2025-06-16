@@ -26,55 +26,85 @@ const EditorPage = () => {
 
     useEffect(() => {
         const init = async () => {
-            socketRef.current = await initSocket();
-            socketRef.current.on('connect_error', (err) => handleErrors(err));
-            socketRef.current.on('connect_failed', (err) => handleErrors(err));
+            try {
+                socketRef.current = await initSocket();
+                
+                socketRef.current.on('connect_error', (err) => {
+                    console.error('Socket connection error:', err);
+                    handleErrors(err);
+                });
+                
+                socketRef.current.on('connect_failed', (err) => {
+                    console.error('Socket connection failed:', err);
+                    handleErrors(err);
+                });
 
-            function handleErrors(e) {
-                console.log('socket error', e);
-                toast.error('Socket connection failed, try again later.');
-                reactNavigator('/');
-            }
-
-            socketRef.current.emit(ACTIONS.JOIN, {
-                roomId,
-                username: location.state?.username,
-            });
-
-            // Listening for joined event
-            socketRef.current.on(
-                ACTIONS.JOINED,
-                ({ clients, username, socketId }) => {
-                    if (username !== location.state?.username) {
-                        toast.success(`${username} joined the room.`);
-                        console.log(`${username} joined`);
+                socketRef.current.on('disconnect', (reason) => {
+                    console.log('Socket disconnected:', reason);
+                    if (reason === 'io server disconnect') {
+                        // The disconnection was initiated by the server, reconnect manually
+                        socketRef.current.connect();
                     }
-                    setClients(clients);
-                    socketRef.current.emit(ACTIONS.SYNC_CODE, {
-                        code: codeRef.current,
-                        socketId,
-                    });
-                }
-            );
+                });
 
-            // Listening for disconnected
-            socketRef.current.on(
-                ACTIONS.DISCONNECTED,
-                ({ socketId, username }) => {
-                    toast.success(`${username} left the room.`);
-                    setClients((prev) => {
-                        return prev.filter(
-                            (client) => client.socketId !== socketId
-                        );
-                    });
+                function handleErrors(e) {
+                    console.error('Socket error details:', e);
+                    toast.error('Socket connection failed, try again later.');
+                    // Don't immediately navigate away, give user a chance to retry
+                    setTimeout(() => {
+                        reactNavigator('/');
+                    }, 3000);
                 }
-            );
+
+                socketRef.current.emit(ACTIONS.JOIN, {
+                    roomId,
+                    username: location.state?.username,
+                });
+
+                // Listening for joined event
+                socketRef.current.on(
+                    ACTIONS.JOINED,
+                    ({ clients, username, socketId }) => {
+                        if (username !== location.state?.username) {
+                            toast.success(`${username} joined the room.`);
+                            console.log(`${username} joined`);
+                        }
+                        setClients(clients);
+                        socketRef.current.emit(ACTIONS.SYNC_CODE, {
+                            code: codeRef.current,
+                            socketId,
+                        });
+                    }
+                );
+
+                // Listening for disconnected
+                socketRef.current.on(
+                    ACTIONS.DISCONNECTED,
+                    ({ socketId, username }) => {
+                        toast.success(`${username} left the room.`);
+                        setClients((prev) => {
+                            return prev.filter(
+                                (client) => client.socketId !== socketId
+                            );
+                        });
+                    }
+                );
+            } catch (error) {
+                console.error('Error initializing socket:', error);
+                toast.error('Failed to initialize socket connection');
+                setTimeout(() => {
+                    reactNavigator('/');
+                }, 3000);
+            }
         };
         init();
         return () => {
             socketRef.current?.disconnect();
             socketRef.current?.off(ACTIONS.JOINED);
             socketRef.current?.off(ACTIONS.DISCONNECTED);
+            socketRef.current?.off('connect_error');
+            socketRef.current?.off('connect_failed');
+            socketRef.current?.off('disconnect');
         };
     }, [roomId, location.state?.username, reactNavigator]);
 
