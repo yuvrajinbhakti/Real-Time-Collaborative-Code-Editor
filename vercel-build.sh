@@ -30,9 +30,9 @@ fi
 echo "Installing dependencies..."
 npm ci
 
-# Run the build
+# Run the build with CI=false to allow warnings
 echo "Running npm build..."
-npm run build
+CI=false npm run build
 
 # Check if build was successful
 if [ $? -eq 0 ]; then

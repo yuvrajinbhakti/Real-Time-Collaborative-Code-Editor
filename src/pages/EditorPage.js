@@ -1,5 +1,5 @@
 //this is the editor page
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import ACTIONS from '../Actions';
 import { Client, Editor } from '../components';
@@ -18,6 +18,11 @@ const EditorPage = () => {
     const { roomId } = useParams();
     const reactNavigator = useNavigate();
     const [clients, setClients] = useState([]);
+
+    // Memoize the code change handler
+    const handleCodeChange = useCallback((code) => {
+        codeRef.current = code;
+    }, []);
 
     useEffect(() => {
         const init = async () => {
@@ -67,9 +72,9 @@ const EditorPage = () => {
         };
         init();
         return () => {
-            socketRef.current.disconnect();
-            socketRef.current.off(ACTIONS.JOINED);
-            socketRef.current.off(ACTIONS.DISCONNECTED);
+            socketRef.current?.disconnect();
+            socketRef.current?.off(ACTIONS.JOINED);
+            socketRef.current?.off(ACTIONS.DISCONNECTED);
         };
     }, [roomId, location.state?.username, reactNavigator]);
 
@@ -123,9 +128,7 @@ const EditorPage = () => {
                 <Editor
                     socketRef={socketRef}
                     roomId={roomId}
-                    onCodeChange={(code) => {
-                        codeRef.current = code;
-                    }}
+                    onCodeChange={handleCodeChange}
                 />
             </div>
         </div>

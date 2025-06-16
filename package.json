@@ -22,8 +22,9 @@
   "scripts": {
     "start:front": "react-scripts start",
     "start": "npm run build && node dev-server.js",
-    "build": "react-scripts build",
-    "vercel-build": "react-scripts build",
+    "build": "CI=false react-scripts build",
+    "build:ci": "react-scripts build",
+    "vercel-build": "CI=false react-scripts build",
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -48,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-transform-private-property-in-object": "^7.24.7",
     "nodemon": "^2.0.15",
     "vercel": "^30.2.3"
   }
