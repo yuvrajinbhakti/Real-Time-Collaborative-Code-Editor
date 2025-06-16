@@ -30,6 +30,10 @@ fi
 echo "Installing dependencies..."
 npm ci
 
+# Ensure babel plugins are installed
+echo "Ensuring babel plugins are available..."
+npm install --save-dev @babel/plugin-proposal-private-property-in-object @babel/plugin-transform-private-property-in-object
+
 # Run the build with CI=false to allow warnings
 echo "Running npm build..."
 CI=false npm run build

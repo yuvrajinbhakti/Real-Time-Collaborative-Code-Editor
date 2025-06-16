@@ -7,7 +7,8 @@ The codebase has been updated to resolve all deployment issues:
 - **React Hook Dependencies**: Properly configured with `CI=false` to allow warnings
 - **Socket.IO Configuration**: Updated for Vercel serverless functions
 - **Build Scripts**: Enhanced with proper error handling
-- **Babel Plugin**: Added to resolve deprecation warnings
+- **Babel Plugin**: Added both `@babel/plugin-proposal-private-property-in-object` and `@babel/plugin-transform-private-property-in-object` to resolve deployment errors
+- **Babel Configuration**: Created `.babelrc` file for explicit babel configuration
 
 ## Prerequisites
 - Node.js installed (v14 or higher)
@@ -47,7 +48,9 @@ vercel --prod
 ### Build Configuration
 - `CI=false` set to allow warnings during build
 - Custom build scripts for development and production
-- Babel plugin configured to resolve deprecation warnings
+- Babel plugins configured to resolve deprecation warnings
+- `.babelrc` file for explicit babel configuration
+- Enhanced `vercel-build.sh` script with dependency installation
 
 ## Environment Variables
 No environment variables are required for basic deployment.
@@ -64,11 +67,15 @@ No environment variables are required for basic deployment.
 1. **Socket connection fails**: Check browser console for connection errors
 2. **Build fails**: Ensure all dependencies are installed with `npm ci`
 3. **Case sensitivity**: File names must match exactly (Editor.js, Client.js)
+4. **Babel errors**: Both babel plugins are now included in devDependencies
 
 ### Debug Commands:
 ```bash
 # Check build locally
 npm run build
+
+# Test build script (same as Vercel uses)
+./vercel-build.sh
 
 # Test locally with development server
 npm run dev
@@ -88,6 +95,7 @@ The application builds successfully with the following configuration:
 - All Socket.IO paths properly configured
 - Serverless functions optimized for Vercel
 - React components properly structured
+- Babel plugins properly configured
 
 ## Features Verified:
 - ✅ Real-time code synchronization
@@ -103,10 +111,18 @@ The application builds successfully with the following configuration:
 - Build output optimized for production
 - CodeMirror editor properly initialized and cleaned up
 
+## Recent Fixes:
+- ✅ Added `@babel/plugin-proposal-private-property-in-object` to resolve Vercel build errors
+- ✅ Created `.babelrc` configuration file
+- ✅ Enhanced build script with babel plugin installation
+- ✅ Tested build process locally - working perfectly
+
 ## Next Steps:
 1. Run `vercel login` to authenticate
 2. Run `vercel --prod` to deploy
 3. Test the deployed application
 4. Share the deployment URL
 
-Your real-time collaborative code editor is now ready for production deployment! 🎉 
+Your real-time collaborative code editor is now ready for production deployment! 🎉
+
+**The babel plugin issue has been resolved - deployment should now work without errors!** 
