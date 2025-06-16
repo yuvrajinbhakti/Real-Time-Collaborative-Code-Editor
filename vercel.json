@@ -10,7 +10,7 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/socket.io/(.*)", "destination": "/api/socket.js" },
+    { "source": "/api/socket", "destination": "/api/socket" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

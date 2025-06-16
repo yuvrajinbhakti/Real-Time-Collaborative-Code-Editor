@@ -26,8 +26,18 @@ if [ -f "src/components/client.js" ] && [ ! -f "src/components/Client.js" ]; the
   cp src/components/client.js src/components/Client.js
 fi
 
+# Install dependencies
+echo "Installing dependencies..."
+npm ci
+
 # Run the build
 echo "Running npm build..."
 npm run build
 
-echo "Build process completed" 
+# Check if build was successful
+if [ $? -eq 0 ]; then
+    echo "Build process completed successfully"
+else
+    echo "Build process failed"
+    exit 1
+fi 

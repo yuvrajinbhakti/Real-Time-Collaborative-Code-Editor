@@ -6,7 +6,7 @@ export const initSocket = async () => {
         reconnectionAttempt: 'Infinity',
         timeout: 10000,
         transports: ['websocket'],
-        path: '/socket.io/'
+        path: '/api/socket'
     };
     
     // In production, use the current URL (hostname) as the WebSocket server

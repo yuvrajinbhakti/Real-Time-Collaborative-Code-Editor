@@ -27,7 +27,7 @@
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy": "vercel"
+    "deploy": "vercel --prod"
   },
   "eslintConfig": {
     "extends": [
