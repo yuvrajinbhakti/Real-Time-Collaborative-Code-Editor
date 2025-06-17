@@ -21,14 +21,12 @@
   },
   "scripts": {
     "start:front": "react-scripts start",
-    "start": "npm run build && node dev-server.js",
+    "start": "npm run build && node server.js",
     "build": "CI=false react-scripts build",
     "build:ci": "react-scripts build",
-    "vercel-build": "CI=false react-scripts build",
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "deploy": "vercel --prod"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
