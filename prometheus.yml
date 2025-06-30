@@ -1,0 +1,99 @@
+# Prometheus configuration for Enhanced Collaborative Code Editor
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'collab-editor-monitor'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Rule files for alerting (optional)
+# rule_files:
+#   - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Collaborative Code Editor Application
+  - job_name: 'collab-editor-app'
+    static_configs:
+      - targets: ['app:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    honor_labels: true
+    
+    # Relabeling for better metric organization
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: app:5000
+
+  # Application Health Checks
+  - job_name: 'collab-editor-health'
+    static_configs:
+      - targets: ['app:5000']
+    metrics_path: '/health'
+    scrape_interval: 30s
+    scrape_timeout: 5s
+    
+    # Convert health check to metrics
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'up'
+        target_label: health_status
+        replacement: '1'
+
+  # Redis Exporter (if you add redis_exporter service)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #   scrape_interval: 15s
+
+  # Node Exporter for system metrics (if added)
+  # - job_name: 'node'
+  #   static_configs:
+  #     - targets: ['node-exporter:9100']
+  #   scrape_interval: 15s
+
+  # Nginx metrics (if nginx-prometheus-exporter is added)
+  # - job_name: 'nginx'
+  #   static_configs:
+  #     - targets: ['nginx-exporter:9113']
+  #   scrape_interval: 15s
+
+  # Self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus
+    retention.time: 15d
+    retention.size: 10GB
+
+# Remote write configuration (for external storage)
+# remote_write:
+#   - url: "https://your-remote-storage/api/v1/write"
+#     basic_auth:
+#       username: "username"
+#       password: "password"
+
+# Remote read configuration (for external storage)
+# remote_read:
+#   - url: "https://your-remote-storage/api/v1/read"
+#     basic_auth:
+#       username: "username"
+#       password: "password" 

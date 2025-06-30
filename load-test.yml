@@ -1,0 +1,235 @@
+config:
+  target: 'http://localhost:5000'
+  phases:
+    # Warm-up phase
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up"
+    
+    # Gradual load increase
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up load"
+    
+    # Sustained load test
+    - duration: 120
+      arrivalRate: 50
+      name: "Sustained load"
+    
+    # Peak load test
+    - duration: 60
+      arrivalRate: 100
+      name: "Peak load - 100 concurrent users"
+    
+    # Stress test
+    - duration: 30
+      arrivalRate: 150
+      name: "Stress test - beyond capacity"
+
+  # WebSocket engine configuration
+  engines:
+    socketio:
+      path: "socket.io"
+      transports: ["websocket"]
+      timeout: 5000
+      pingTimeout: 60000
+      pingInterval: 25000
+
+  # Test data
+  variables:
+    roomIds:
+      - "test-room-1"
+      - "test-room-2"
+      - "test-room-3"
+      - "test-room-4"
+      - "test-room-5"
+    
+    usernames:
+      - "LoadTestUser"
+      - "TestUser"
+      - "StressTestUser"
+      - "PerfTestUser"
+      - "BenchmarkUser"
+    
+    codeSnippets:
+      - "function hello() { console.log('Hello World'); }"
+      - "const x = 42; console.log(x);"
+      - "// This is a test comment\nlet y = 'test';"
+      - "for (let i = 0; i < 10; i++) { console.log(i); }"
+      - "const arr = [1, 2, 3, 4, 5]; arr.forEach(n => console.log(n));"
+
+  # Performance thresholds
+  ensure:
+    p95: 100  # 95% of requests should complete in <100ms
+    p99: 200  # 99% of requests should complete in <200ms
+    maxErrorRate: 1%  # Error rate should be <1%
+
+  # Metrics collection
+  metrics:
+    - name: "response_time"
+      summary: "Response time percentiles"
+    - name: "connection_time"
+      summary: "WebSocket connection time"
+    - name: "message_latency"
+      summary: "Message round-trip latency"
+
+scenarios:
+  # Test HTTP endpoints
+  - name: "HTTP Health Checks"
+    weight: 10
+    engine: http
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+            - hasProperty: "status"
+          capture:
+            - json: "$.timestamp"
+              as: "health_timestamp"
+      
+      - get:
+          url: "/api/status"
+          expect:
+            - statusCode: 200
+            - hasProperty: "status"
+            - json: "$.status"
+              equals: "online"
+      
+      - get:
+          url: "/metrics"
+          expect:
+            - statusCode: 200
+            - contentType: "text/plain"
+
+  # Test collaborative editing with WebSocket
+  - name: "Real-time Collaboration"
+    weight: 70
+    engine: socketio
+    flow:
+      # Connect to Socket.IO
+      - emit:
+          channel: "connect"
+          response:
+            channel: "connect"
+          
+      # Join a room
+      - emit:
+          channel: "join"
+          data:
+            roomId: "{{ $randomPick(roomIds) }}"
+            username: "{{ $randomPick(usernames) }}-{{ $randomNumber(1000, 9999) }}"
+          response:
+            channel: "joined"
+            timeout: 5000
+          capture:
+            - json: "$.socketId"
+              as: "socketId"
+            - json: "$.clients"
+              as: "clients"
+      
+      # Wait for room sync
+      - think: 1
+      
+      # Send code changes
+      - loop:
+          - emit:
+              channel: "code-change"
+              data:
+                roomId: "{{ roomId }}"
+                code: "{{ $randomPick(codeSnippets) }}\n// Modified at {{ $timestamp }}"
+          
+          # Wait for response and measure latency
+          - think: 
+              min: 0.1
+              max: 0.5
+        count: 10
+      
+      # Stay connected for a while
+      - think: 
+          min: 5
+          max: 15
+      
+      # Disconnect
+      - emit:
+          channel: "disconnect"
+
+  # Test room management
+  - name: "Room Management"
+    weight: 15
+    engine: socketio
+    flow:
+      - emit:
+          channel: "connect"
+          response:
+            channel: "connect"
+      
+      # Join room
+      - emit:
+          channel: "join"
+          data:
+            roomId: "management-test-{{ $randomNumber(1, 20) }}"
+            username: "RoomManager-{{ $randomNumber(1000, 9999) }}"
+          response:
+            channel: "joined"
+      
+      # Quick disconnect to test room cleanup
+      - think: 2
+      
+      - emit:
+          channel: "disconnect"
+
+  # Test error handling and edge cases
+  - name: "Error Scenarios"
+    weight: 5
+    engine: socketio
+    flow:
+      - emit:
+          channel: "connect"
+          response:
+            channel: "connect"
+      
+      # Try to join with invalid data
+      - emit:
+          channel: "join"
+          data:
+            roomId: ""
+            username: ""
+      
+      # Try to send code change without joining
+      - emit:
+          channel: "code-change"
+          data:
+            roomId: "nonexistent-room"
+            code: "invalid code change"
+      
+      - think: 1
+      
+      - emit:
+          channel: "disconnect"
+
+# Custom metrics and reporting
+before:
+  flow:
+    - log: "Starting load test with {{ $environment.phases.length }} phases"
+    - log: "Target: {{ $environment.target }}"
+
+after:
+  flow:
+    - log: "Load test completed"
+    - log: "Check results for performance metrics"
+
+# Plugin configuration for detailed metrics
+plugins:
+  ensure: {}
+  apdex:
+    threshold: 100  # 100ms threshold for satisfactory response
+  metrics-by-endpoint: {}
+  
+# Reporting configuration
+reporting:
+  json:
+    output: "load-test-results.json"
+  html:
+    output: "load-test-report.html" 

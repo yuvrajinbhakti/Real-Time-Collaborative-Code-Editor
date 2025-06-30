@@ -1,0 +1,88 @@
+version: '3.8'
+
+# Development Docker Compose - Simplified for local development
+services:
+  # Redis service for pub/sub and caching
+  redis:
+    image: redis:7-alpine
+    container_name: collab-editor-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - collab-dev-network
+
+  # Main application service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: collab-editor-app-dev
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MAX_CONCURRENT_USERS=100
+      - ENABLE_METRICS=true
+      - ENABLE_OT=true
+      - LOG_LEVEL=debug
+      - CORS_ORIGIN=http://localhost:3000
+      - ENABLE_HEALTH_CHECKS=true
+    volumes:
+      - app_dev_logs:/app/logs
+      # Mount source code for development (optional)
+      # - ./src:/app/src:ro
+      # - ./services:/app/services:ro
+      # - ./config:/app/config:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - collab-dev-network
+
+  # Redis Commander for Redis GUI (development only)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: collab-editor-redis-gui
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - HTTP_USER=admin
+      - HTTP_PASSWORD=admin123
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - collab-dev-network
+
+volumes:
+  redis_dev_data:
+    driver: local
+  app_dev_logs:
+    driver: local
+
+networks:
+  collab-dev-network:
+    driver: bridge 

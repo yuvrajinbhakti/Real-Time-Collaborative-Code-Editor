@@ -21,18 +21,51 @@
     "socket.io": "^4.4.1",
     "socket.io-client": "^4.4.1",
     "uuid": "^8.3.2",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "redis": "^4.6.5",
+    "socket.io-redis": "^6.1.1",
+    "bull": "^4.10.4",
+    "ioredis": "^5.3.2",
+    "sharedb": "^3.0.0",
+    "sharedb-redis-pubsub": "^1.0.2",
+    "operational-transform": "^0.0.17",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^6.1.5",
+    "cors": "^2.8.5",
+    "winston": "^3.8.2",
+    "winston-daily-rotate-file": "^4.7.1",
+    "prometheus-client": "^1.0.0",
+    "prom-client": "^14.2.0",
+    "express-prometheus-middleware": "^1.2.0",
+    "node-cron": "^3.0.2",
+    "lodash.debounce": "^4.0.8",
+    "dotenv": "^16.0.3"
   },
   "scripts": {
     "start:front": "react-scripts start",
     "start": "npm run build && node server.js",
+    "start:enhanced": "node server-enhanced.js",
+    "start:redis": "redis-server --port 6379",
+    "start:dev": "concurrently \"npm run start:redis\" \"nodemon dev-server.js\"",
     "build": "CI=false react-scripts build",
     "build:ci": "react-scripts build",
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
+    "test:load": "artillery run load-test.yml",
     "eject": "react-scripts eject",
     "railway:build": "npm install && npm run build",
-    "railway:start": "node server.js"
+    "railway:start": "node server.js",
+    "monitoring": "node monitoring/metrics-server.js",
+    "docker:build": "docker build -t collab-editor .",
+    "docker:run": "docker run -p 5000:5000 collab-editor",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up --build",
+    "docker:dev:down": "docker-compose -f docker-compose.dev.yml down",
+    "docker:prod": "docker-compose up --build -d",
+    "docker:prod:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:logs:app": "docker-compose logs -f app",
+    "docker:clean": "docker system prune -af && docker volume prune -f",
+    "setup": "./setup-enhanced.sh"
   },
   "eslintConfig": {
     "extends": [
@@ -56,6 +89,8 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/plugin-transform-private-property-in-object": "^7.27.1",
     "nodemon": "^2.0.15",
-    "vercel": "^30.2.3"
+    "vercel": "^30.2.3",
+    "artillery": "^2.0.5",
+    "concurrently": "^7.6.0"
   }
 }
