@@ -241,6 +241,56 @@ class RedisService {
     }
   }
 
+  // Set with expiration
+  async setWithExpiration(key, value, expireInSeconds) {
+    if (!this.client) return false;
+    
+    try {
+      await this.client.setex(key, expireInSeconds, value);
+      return true;
+    } catch (error) {
+      logger.error('Redis setWithExpiration failed:', error);
+      return false;
+    }
+  }
+
+  // Get value
+  async get(key) {
+    if (!this.client) return null;
+    
+    try {
+      return await this.client.get(key);
+    } catch (error) {
+      logger.error('Redis get failed:', error);
+      return null;
+    }
+  }
+
+  // Add to list
+  async addToList(key, value) {
+    if (!this.client) return false;
+    
+    try {
+      await this.client.lpush(key, value);
+      return true;
+    } catch (error) {
+      logger.error('Redis addToList failed:', error);
+      return false;
+    }
+  }
+
+  // Get list range
+  async getList(key, start = 0, end = -1) {
+    if (!this.client) return [];
+    
+    try {
+      return await this.client.lrange(key, start, end);
+    } catch (error) {
+      logger.error('Redis getList failed:', error);
+      return [];
+    }
+  }
+
   // Metrics
   async getMetrics() {
     if (!this.client) return null;

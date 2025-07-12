@@ -14,6 +14,7 @@ const redisService = require('./services/redis');
 const healthCheck = require('./services/healthCheck');
 const messageQueue = require('./services/messageQueue');
 const otService = require('./services/operationalTransform');
+const aiCodeReviewService = require('./services/aiCodeReview');
 const ACTIONS = require('./src/Actions');
 
 class EnhancedServer {
@@ -71,6 +72,9 @@ class EnhancedServer {
     
     // Initialize health checks
     healthCheck.initialize();
+    
+    // Initialize AI code review service
+    aiCodeReviewService.initialize();
     
     logger.info('✅ Services initialized');
   }
@@ -211,6 +215,10 @@ class EnhancedServer {
         res.status(500).json({ error: error.message });
       }
     });
+
+    // AI Code Review routes
+    const aiReviewRoutes = require('./routes/aiReview');
+    this.app.use('/api/ai-review', aiReviewRoutes);
 
     // Catch all handler for React Router
     this.app.get('*', (req, res) => {

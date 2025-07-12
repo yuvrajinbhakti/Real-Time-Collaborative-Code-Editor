@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import ACTIONS from '../Actions';
 import Client from '../components/Client';
 import Editor from '../components/Editor';
+import AIReviewPanel from '../components/AIReviewPanel';
 import { initSocket } from '../socket';
 import {
     useLocation,
@@ -19,6 +20,8 @@ const EditorPage = () => {
     const { roomId } = useParams();
     const reactNavigator = useNavigate();
     const [clients, setClients] = useState([]);
+    const [showAIReview, setShowAIReview] = useState(false);
+    const [currentLanguage, setCurrentLanguage] = useState('javascript');
 
     // Memoize the code change handler
     const handleCodeChange = useCallback((code) => {
@@ -151,6 +154,16 @@ const EditorPage = () => {
                 <button className="btn copyBtn" onClick={copyRoomId}>
                     Copy ROOM ID
                 </button>
+                <button 
+                    className="btn aiReviewBtn" 
+                    onClick={() => setShowAIReview(!showAIReview)}
+                    style={{ 
+                        background: showAIReview ? '#667eea' : '#2ed573',
+                        marginBottom: '10px'
+                    }}
+                >
+                    {showAIReview ? 'Hide' : 'Show'} AI Review
+                </button>
                 <button className="btn leaveBtn" onClick={leaveRoom}>
                     Leave
                 </button>
@@ -162,6 +175,16 @@ const EditorPage = () => {
                     onCodeChange={handleCodeChange}
                 />
             </div>
+            {showAIReview && (
+                <div className="aiReviewWrap">
+                    <AIReviewPanel
+                        roomId={roomId}
+                        socketRef={socketRef}
+                        currentCode={codeRef.current}
+                        language={currentLanguage}
+                    />
+                </div>
+            )}
         </div>
     );
 };
