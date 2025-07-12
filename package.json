@@ -81,9 +81,9 @@
   "scripts": {
     "start:front": "react-scripts start",
     "start": "npm run build && node server.js",
-    "start:enhanced": "node server-enhanced.js",
+    "start:ai": "node server.js",
     "start:redis": "redis-server --port 6379",
-    "start:dev": "concurrently \"npm run start:redis\" \"nodemon dev-server.js\"",
+    "start:dev": "concurrently \"npm run start:redis\" \"nodemon server.js\"",
     "build": "CI=false react-scripts build",
     "build:ci": "react-scripts build",
     "dev": "nodemon dev-server.js",

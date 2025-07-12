@@ -5,6 +5,37 @@ const path = require('path');
 const { Server } = require('socket.io');
 const ACTIONS = require('./src/Actions');
 
+// Import AI and enhanced services (with fallbacks)
+let aiCodeReviewService;
+let logger = console; // Fallback to console if logger service not available
+
+try {
+  aiCodeReviewService = require('./services/aiCodeReview');
+  console.log('✅ AI Code Review service loaded');
+} catch (error) {
+  console.log('⚠️ AI Code Review service not available:', error.message);
+  // Create a mock service to prevent errors
+  aiCodeReviewService = {
+    initialize: () => {},
+    getMetrics: () => ({ isEnabled: false, provider: 'none', isFree: false })
+  };
+}
+
+try {
+  logger = require('./services/logger');
+  console.log('✅ Logger service loaded');
+} catch (error) {
+  console.log('⚠️ Logger service not available, using console');
+}
+
+// Initialize services
+console.log('🤖 Initializing AI Code Review service...');
+aiCodeReviewService.initialize();
+
+// Middleware setup
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -16,13 +47,28 @@ const io = new Server(server, {
 
 // API routes
 app.get('/api/status', (req, res) => {
+  const aiMetrics = aiCodeReviewService.getMetrics();
   res.json({ 
     status: 'online', 
     mode: process.env.NODE_ENV || 'production', 
     timestamp: new Date().toISOString(),
-    platform: 'Railway'
+    platform: 'Railway',
+    features: {
+      aiCodeReview: aiMetrics.isEnabled,
+      aiProvider: aiMetrics.provider || 'none',
+      isFree: aiMetrics.isFree || false
+    }
   });
 });
+
+// AI Code Review routes
+try {
+  const aiReviewRoutes = require('./routes/aiReview');
+  app.use('/api/ai-review', aiReviewRoutes);
+  console.log('✅ AI Code Review routes loaded');
+} catch (error) {
+  console.log('⚠️ AI Code Review routes not available:', error.message);
+}
 
 // Serve static files from build directory
 app.use(express.static(path.join(__dirname, 'build')));
