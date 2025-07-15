@@ -5,6 +5,14 @@ const logger = require('../services/logger');
 const { validate, schemas } = require('../middleware/validation');
 const { authenticate, optionalAuth, userRateLimit } = require('../middleware/auth');
 
+// Store socket.io instance for real-time events
+let io;
+
+// Set socket.io instance
+router.setSocketIO = (socketIO) => {
+  io = socketIO;
+};
+
 // AI Code Review Routes
 
 // Create a new AI code review
@@ -40,6 +48,19 @@ router.post('/create',
         userId,
         { analysisTypes }
       );
+
+      // Emit real-time event to room members
+      if (io) {
+        io.to(roomId).emit('ai_review_created', {
+          reviewId: review.id,
+          authorId: userId,
+          summary: review.analysis.summary,
+          overallScore: review.analysis.overall_score,
+          issueCount: review.analysis.issues.length,
+          language: review.language,
+          created_at: review.created_at
+        });
+      }
 
       res.json({
         success: true,
@@ -170,6 +191,18 @@ router.post('/:reviewId/comment',
         comment,
         lineNumber
       );
+
+      // Get the review to find the room ID for socket emission
+      const review = await aiCodeReviewService.getReview(reviewId);
+      
+      // Emit real-time event to room members
+      if (io && review) {
+        io.to(review.roomId).emit('review_comment_added', {
+          reviewId,
+          comment: newComment,
+          authorId: userId
+        });
+      }
 
       res.json({
         success: true,

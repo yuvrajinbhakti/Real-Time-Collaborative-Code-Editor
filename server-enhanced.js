@@ -76,6 +76,17 @@ class EnhancedServer {
     // Initialize AI code review service
     aiCodeReviewService.initialize();
     
+    // Setup periodic cleanup for AI Code Review service (every hour)
+    setInterval(() => {
+      try {
+        aiCodeReviewService.cleanup();
+      } catch (error) {
+        logger.error('AI Code Review cleanup failed', { error: error.message });
+      }
+    }, 60 * 60 * 1000); // 1 hour
+    
+    logger.info('🧹 AI Code Review periodic cleanup scheduled (every hour)');
+    
     logger.info('✅ Services initialized');
   }
 
@@ -218,6 +229,8 @@ class EnhancedServer {
 
     // AI Code Review routes
     const aiReviewRoutes = require('./routes/aiReview');
+    // Pass socket.io instance to routes for real-time events
+    aiReviewRoutes.setSocketIO(this.io);
     this.app.use('/api/ai-review', aiReviewRoutes);
 
     // Catch all handler for React Router

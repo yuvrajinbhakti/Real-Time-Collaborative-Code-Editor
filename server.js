@@ -28,9 +28,71 @@ try {
   console.log('⚠️ Logger service not available, using console');
 }
 
+// In-memory storage for collaborative reviews (directly in server.js)
+const collaborativeReviews = new Map(); // reviewId -> review object
+const roomReviews = new Map();          // roomId -> array of reviewIds
+const reviewComments = new Map();       // reviewId -> array of comments
+
+// Helper functions for collaborative reviews
+function generateReviewId() {
+  return `review_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function generateCommentId() {
+  return `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
 // Initialize services
 console.log('🤖 Initializing AI Code Review service...');
 aiCodeReviewService.initialize();
+
+// Setup periodic cleanup for AI Code Review service (every hour)
+setInterval(() => {
+  try {
+    aiCodeReviewService.cleanup();
+    // Also cleanup collaborative reviews
+    cleanupCollaborativeReviews();
+  } catch (error) {
+    console.error('AI Code Review cleanup failed:', error.message);
+  }
+}, 60 * 60 * 1000); // 1 hour
+
+function cleanupCollaborativeReviews() {
+  const now = Date.now();
+  const reviewMaxAge = 24 * 60 * 60 * 1000; // 24 hours
+  
+  for (const [reviewId, review] of collaborativeReviews.entries()) {
+    const reviewAge = now - new Date(review.created_at).getTime();
+    if (reviewAge > reviewMaxAge) {
+      // Remove from collaborative reviews
+      collaborativeReviews.delete(reviewId);
+      
+      // Remove from room reviews
+      if (roomReviews.has(review.roomId)) {
+        const roomReviewIds = roomReviews.get(review.roomId);
+        const updatedIds = roomReviewIds.filter(id => id !== reviewId);
+        if (updatedIds.length === 0) {
+          roomReviews.delete(review.roomId);
+        } else {
+          roomReviews.set(review.roomId, updatedIds);
+        }
+      }
+      
+      // Remove comments for this review
+      reviewComments.delete(reviewId);
+      
+      console.log('Cleaned up old review:', reviewId);
+    }
+  }
+  
+  console.log('Collaborative reviews cleanup completed', {
+    collaborativeReviewsCount: collaborativeReviews.size,
+    roomReviewsCount: roomReviews.size,
+    reviewCommentsCount: reviewComments.size
+  });
+}
+
+console.log('🧹 AI Code Review periodic cleanup scheduled (every hour)');
 
 // Middleware setup
 app.use(express.json({ limit: '1mb' }));
@@ -56,19 +118,348 @@ app.get('/api/status', (req, res) => {
     features: {
       aiCodeReview: aiMetrics.isEnabled,
       aiProvider: aiMetrics.provider || 'none',
-      isFree: aiMetrics.isFree || false
+      isFree: aiMetrics.isFree || false,
+      collaborativeReviews: collaborativeReviews.size,
+      activeRooms: roomReviews.size,
+      totalComments: Array.from(reviewComments.values()).reduce((sum, comments) => sum + comments.length, 0)
     }
   });
 });
 
-// AI Code Review routes
-try {
-  const aiReviewRoutes = require('./routes/aiReview');
-  app.use('/api/ai-review', aiReviewRoutes);
-  console.log('✅ AI Code Review routes loaded');
-} catch (error) {
-  console.log('⚠️ AI Code Review routes not available:', error.message);
-}
+// AI Code Review Routes (implemented directly in server.js)
+
+// Create AI Review
+app.post('/api/ai-review/create', async (req, res) => {
+  try {
+    const { roomId, code, language, analysisTypes } = req.body;
+    const userId = req.ip; // Use IP as user identifier
+    
+    // Validate input
+    if (!code || code.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code is required'
+      });
+    }
+
+    if (code.length > 50000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code too large. Maximum 50,000 characters allowed.'
+      });
+    }
+
+    // Analyze the code first
+    const analysis = await aiCodeReviewService.analyzeCode(code, language || 'javascript', { 
+      analysisTypes, 
+      userId 
+    });
+    
+    // Create review object
+    const reviewId = generateReviewId();
+    const review = {
+      id: reviewId,
+      roomId,
+      authorId: userId,
+      code,
+      language: language || 'javascript',
+      analysis,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      comments: []
+    };
+    
+    // Store the review
+    collaborativeReviews.set(reviewId, review);
+    
+    // Add to room reviews
+    if (!roomReviews.has(roomId)) {
+      roomReviews.set(roomId, []);
+    }
+    roomReviews.get(roomId).unshift(reviewId); // Add to beginning
+    
+    // Initialize comments array
+    reviewComments.set(reviewId, []);
+
+    // Emit real-time event to room members
+    io.to(roomId).emit('ai_review_created', {
+      reviewId: review.id,
+      authorId: userId,
+      summary: review.analysis.summary,
+      overallScore: review.analysis.overall_score,
+      issueCount: review.analysis.issues.length,
+      language: review.language,
+      created_at: review.created_at
+    });
+
+    console.log('Collaborative review created', {
+      reviewId,
+      roomId,
+      authorId: userId,
+      language: review.language,
+      issuesFound: analysis.issues.length
+    });
+
+    res.json({
+      success: true,
+      data: {
+        reviewId: review.id,
+        summary: review.analysis.summary,
+        overallScore: review.analysis.overall_score,
+        issueCount: review.analysis.issues.length,
+        analysis: review.analysis
+      }
+    });
+
+  } catch (error) {
+    console.error('AI review creation failed', error.message);
+
+    if (error.message.includes('Rate limit exceeded')) {
+      return res.status(429).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    if (error.message.includes('not enabled')) {
+      return res.status(503).json({
+        success: false,
+        message: 'AI Code Review service is currently unavailable'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create AI review'
+    });
+  }
+});
+
+// Get specific review
+app.get('/api/ai-review/:reviewId', async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const review = collaborativeReviews.get(reviewId);
+    
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: 'Review not found'
+      });
+    }
+    
+    // Get comments for this review
+    const comments = reviewComments.get(reviewId) || [];
+    
+    res.json({
+      success: true,
+      data: {
+        ...review,
+        comments
+      }
+    });
+
+  } catch (error) {
+    console.error('Failed to get AI review', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve review'
+    });
+  }
+});
+
+// Get room reviews
+app.get('/api/ai-review/room/:roomId', async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const reviewIds = roomReviews.get(roomId) || [];
+    const reviews = [];
+    
+    for (let i = 0; i < Math.min(reviewIds.length, limit); i++) {
+      const reviewId = reviewIds[i];
+      const review = collaborativeReviews.get(reviewId);
+      if (review) {
+        const comments = reviewComments.get(reviewId) || [];
+        reviews.push({
+          id: review.id,
+          authorId: review.authorId,
+          summary: review.analysis.summary,
+          overallScore: review.analysis.overall_score,
+          issueCount: review.analysis.issues.length,
+          language: review.language,
+          created_at: review.created_at,
+          commentCount: comments.length
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: reviews
+    });
+
+  } catch (error) {
+    console.error('Failed to get room reviews', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve room reviews'
+    });
+  }
+});
+
+// Add comment to review
+app.post('/api/ai-review/:reviewId/comment', async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { comment, lineNumber } = req.body;
+    const userId = req.ip;
+
+    if (!comment || comment.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Comment is required'
+      });
+    }
+
+    const review = collaborativeReviews.get(reviewId);
+    if (!review) {
+      return res.status(404).json({
+        success: false,
+        message: 'Review not found'
+      });
+    }
+    
+    const newComment = {
+      id: generateCommentId(),
+      reviewId,
+      userId,
+      comment: comment.trim(),
+      lineNumber,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Add comment to review comments
+    if (!reviewComments.has(reviewId)) {
+      reviewComments.set(reviewId, []);
+    }
+    reviewComments.get(reviewId).push(newComment);
+    
+    // Update review timestamp
+    review.updated_at = new Date().toISOString();
+
+    // Emit real-time event to room members
+    io.to(review.roomId).emit('review_comment_added', {
+      reviewId,
+      comment: newComment,
+      authorId: userId
+    });
+
+    console.log('Comment added to review', {
+      reviewId,
+      commentId: newComment.id,
+      userId,
+      lineNumber
+    });
+
+    res.json({
+      success: true,
+      data: newComment
+    });
+
+  } catch (error) {
+    console.error('Failed to add review comment', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add comment'
+    });
+  }
+});
+
+// Quick analysis
+app.post('/api/ai-review/analyze', async (req, res) => {
+  try {
+    const { code, language, analysisTypes } = req.body;
+    const userId = req.ip;
+
+    if (!code || code.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code is required'
+      });
+    }
+
+    if (code.length > 10000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Code too large for quick analysis. Maximum 10,000 characters allowed.'
+      });
+    }
+
+    const analysis = await aiCodeReviewService.analyzeCode(
+      code,
+      language || 'javascript',
+      { analysisTypes, userId }
+    );
+
+    res.json({
+      success: true,
+      data: analysis
+    });
+
+  } catch (error) {
+    console.error('AI quick analysis failed', error.message);
+
+    if (error.message.includes('Rate limit exceeded')) {
+      return res.status(429).json({
+        success: false,
+        message: error.message
+      });
+    }
+
+    if (error.message.includes('not enabled')) {
+      return res.status(503).json({
+        success: false,
+        message: 'AI Code Review service is currently unavailable'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to analyze code'
+    });
+  }
+});
+
+// AI service status
+app.get('/api/ai-review/status', async (req, res) => {
+  try {
+    const metrics = aiCodeReviewService.getMetrics();
+    
+    res.json({
+      success: true,
+      data: {
+        enabled: metrics.isEnabled,
+        provider: metrics.provider,
+        isFree: metrics.isFree,
+        cacheSize: metrics.cacheSize,
+        activeUsers: metrics.rateLimitTrackers,
+        totalRequests: metrics.totalRequests,
+        collaborativeReviews: collaborativeReviews.size,
+        activeRooms: roomReviews.size,
+        totalComments: Array.from(reviewComments.values()).reduce((sum, comments) => sum + comments.length, 0)
+      }
+    });
+
+  } catch (error) {
+    console.error('Failed to get AI service status', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get service status'
+    });
+  }
+});
 
 // Serve static files from build directory
 app.use(express.static(path.join(__dirname, 'build')));
@@ -134,6 +525,8 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📡 Socket.IO server ready for connections`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
+    console.log(`🤖 AI Code Review: ${aiCodeReviewService.getMetrics().isEnabled ? 'Enabled' : 'Disabled'}`);
+    console.log(`🏠 Collaborative reviews storage ready`);
 });
 
 module.exports = app;

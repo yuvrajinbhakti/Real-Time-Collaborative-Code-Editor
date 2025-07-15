@@ -119,6 +119,9 @@ async function runTests() {
   console.log(`   Cache Size: ${metrics.cacheSize}`);
   console.log(`   Rate Limit Trackers: ${metrics.rateLimitTrackers}`);
   console.log(`   Total Requests: ${metrics.totalRequests}`);
+  console.log(`   Collaborative Reviews: ${metrics.collaborativeReviews}`);
+  console.log(`   Active Rooms: ${metrics.activeRooms}`);
+  console.log(`   Total Comments: ${metrics.totalComments}`);
   
   console.log('\n🎉 AI Code Review tests completed!');
 }
@@ -172,6 +175,14 @@ async function testCollaborativeFeatures() {
     console.log('✅ Collaborative review created successfully');
     console.log(`   Review ID: ${review.id}`);
     console.log(`   Room ID: ${review.roomId}`);
+    console.log(`   Author ID: ${review.authorId}`);
+    console.log(`   Overall Score: ${review.analysis.overall_score}/100`);
+    
+    // Test getting the specific review
+    const retrievedReview = await aiCodeReviewService.getReview(review.id);
+    console.log('✅ Review retrieved successfully');
+    console.log(`   Retrieved review ID: ${retrievedReview.id}`);
+    console.log(`   Comments count: ${retrievedReview.comments.length}`);
     
     // Add a comment
     const comment = await aiCodeReviewService.addReviewComment(
@@ -183,13 +194,69 @@ async function testCollaborativeFeatures() {
     
     console.log('✅ Comment added successfully');
     console.log(`   Comment ID: ${comment.id}`);
+    console.log(`   Comment text: ${comment.comment}`);
+    console.log(`   Line number: ${comment.lineNumber}`);
+    
+    // Add another comment without line number
+    const comment2 = await aiCodeReviewService.addReviewComment(
+      review.id,
+      'test-user-3',
+      'Great function structure!'
+    );
+    
+    console.log('✅ Second comment added successfully');
+    console.log(`   Comment ID: ${comment2.id}`);
     
     // Get room reviews
     const roomReviews = await aiCodeReviewService.getRoomReviews(testRoomId);
     console.log(`✅ Retrieved ${roomReviews.length} room reviews`);
     
+    if (roomReviews.length > 0) {
+      const firstReview = roomReviews[0];
+      console.log(`   First review has ${firstReview.comments.length} comments`);
+      console.log(`   Review created at: ${firstReview.created_at}`);
+    }
+    
+    // Test getting non-existent review
+    const nonExistentReview = await aiCodeReviewService.getReview('non-existent-id');
+    if (nonExistentReview === null) {
+      console.log('✅ Non-existent review correctly returns null');
+    }
+    
+    // Test adding comment to non-existent review
+    try {
+      await aiCodeReviewService.addReviewComment('non-existent-id', 'test-user', 'test comment');
+      console.log('❌ Should have thrown error for non-existent review');
+    } catch (error) {
+      if (error.message.includes('Review not found')) {
+        console.log('✅ Correctly throws error for non-existent review');
+      } else {
+        console.log(`❌ Unexpected error: ${error.message}`);
+      }
+    }
+    
+    // Create another review in the same room
+    const review2 = await aiCodeReviewService.createCollaborativeReview(
+      testRoomId,
+      'const x = 5; console.log(x);',
+      'javascript',
+      'test-user-4',
+      { analysisTypes: ['style', 'maintainability'] }
+    );
+    
+    console.log('✅ Second review created in same room');
+    
+    // Get room reviews again (should have 2 now)
+    const roomReviews2 = await aiCodeReviewService.getRoomReviews(testRoomId);
+    console.log(`✅ Room now has ${roomReviews2.length} reviews`);
+    
+    // Test limit parameter
+    const limitedReviews = await aiCodeReviewService.getRoomReviews(testRoomId, 1);
+    console.log(`✅ Limited query returned ${limitedReviews.length} review(s)`);
+    
   } catch (error) {
     console.error(`❌ Collaborative features test failed: ${error.message}`);
+    console.error(`   Stack trace: ${error.stack}`);
   }
 }
 
