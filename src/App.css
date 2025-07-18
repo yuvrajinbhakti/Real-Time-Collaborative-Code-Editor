@@ -141,3 +141,51 @@ footer a:hover {
     line-height: 1.6;
     padding-top: 20px;
 }
+
+/* New simplified AI review layout */
+.mainWrap {
+    display: flex;
+    height: 100vh;
+}
+
+.aside {
+    width: 240px;
+    min-width: 240px;
+    background: #1c1e29;
+    border-right: 1px solid #4f4f4f;
+    display: flex;
+    flex-direction: column;
+}
+
+.editorWrap {
+    flex: 1;
+    background: #282a36;
+}
+
+.aiResultsWrap {
+    width: 450px;
+    min-width: 450px;
+    background: #1e1e1e;
+    border-left: 1px solid #333;
+    overflow-y: auto;
+}
+
+.aiReviewBtn {
+    background: #2ed573 !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 16px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    transition: background-color 0.2s !important;
+}
+
+.aiReviewBtn:hover {
+    background: #26a65b !important;
+}
+
+.aiReviewBtn:active {
+    background: #1e8449 !important;
+}

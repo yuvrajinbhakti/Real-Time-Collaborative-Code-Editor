@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import ACTIONS from '../Actions';
 import Client from '../components/Client';
 import Editor from '../components/Editor';
-import AIReviewPanel from '../components/AIReviewPanel';
+import SimpleAIReview from '../components/SimpleAIReview';
 import { initSocket } from '../socket';
 import {
     useLocation,
@@ -20,13 +20,24 @@ const EditorPage = () => {
     const { roomId } = useParams();
     const reactNavigator = useNavigate();
     const [clients, setClients] = useState([]);
-    const [showAIReview, setShowAIReview] = useState(false);
+    const [showAIResults, setShowAIResults] = useState(false);
     const [currentLanguage, setCurrentLanguage] = useState('javascript');
 
     // Memoize the code change handler
     const handleCodeChange = useCallback((code) => {
         codeRef.current = code;
     }, []);
+
+    // Simple review function - your better idea!
+    const handleReviewCode = async () => {
+        if (!codeRef.current || codeRef.current.trim().length === 0) {
+            toast.error('No code to review');
+            return;
+        }
+
+        // Show results panel and let SimpleAIReview handle the API call
+        setShowAIResults(true);
+    };
 
     useEffect(() => {
         const init = async () => {
@@ -156,13 +167,13 @@ const EditorPage = () => {
                 </button>
                 <button 
                     className="btn aiReviewBtn" 
-                    onClick={() => setShowAIReview(!showAIReview)}
+                    onClick={handleReviewCode}
                     style={{ 
-                        background: showAIReview ? '#667eea' : '#2ed573',
+                        background: '#2ed573',
                         marginBottom: '10px'
                     }}
                 >
-                    {showAIReview ? 'Hide' : 'Show'} AI Review
+                    🔍 Review Code
                 </button>
                 <button className="btn leaveBtn" onClick={leaveRoom}>
                     Leave
@@ -175,13 +186,13 @@ const EditorPage = () => {
                     onCodeChange={handleCodeChange}
                 />
             </div>
-            {showAIReview && (
-                <div className="aiReviewWrap">
-                    <AIReviewPanel
+            {showAIResults && (
+                <div className="aiResultsWrap">
+                    <SimpleAIReview
                         roomId={roomId}
-                        socketRef={socketRef}
                         currentCode={codeRef.current}
                         language={currentLanguage}
+                        onClose={() => setShowAIResults(false)}
                     />
                 </div>
             )}
