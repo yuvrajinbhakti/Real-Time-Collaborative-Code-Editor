@@ -235,6 +235,35 @@ app.post('/api/ai-review/create', async (req, res) => {
   }
 });
 
+// AI service status - MUST come before parameterized routes
+app.get('/api/ai-review/status', async (req, res) => {
+  try {
+    const metrics = aiCodeReviewService.getMetrics();
+
+    res.json({
+      success: true,
+      data: {
+        enabled: metrics.isEnabled,
+        provider: metrics.provider,
+        isFree: metrics.isFree,
+        cacheSize: metrics.cacheSize,
+        activeUsers: metrics.rateLimitTrackers,
+        totalRequests: metrics.totalRequests,
+        collaborativeReviews: collaborativeReviews.size,
+        activeRooms: roomReviews.size,
+        totalComments: Array.from(reviewComments.values()).reduce((sum, comments) => sum + comments.length, 0)
+      }
+    });
+
+  } catch (error) {
+    console.error('Failed to get AI service status', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get service status'
+    });
+  }
+});
+
 // Get specific review
 app.get('/api/ai-review/:reviewId', async (req, res) => {
   try {
@@ -432,34 +461,7 @@ app.post('/api/ai-review/analyze', async (req, res) => {
   }
 });
 
-// AI service status
-app.get('/api/ai-review/status', async (req, res) => {
-  try {
-    const metrics = aiCodeReviewService.getMetrics();
-    
-    res.json({
-      success: true,
-      data: {
-        enabled: metrics.isEnabled,
-        provider: metrics.provider,
-        isFree: metrics.isFree,
-        cacheSize: metrics.cacheSize,
-        activeUsers: metrics.rateLimitTrackers,
-        totalRequests: metrics.totalRequests,
-        collaborativeReviews: collaborativeReviews.size,
-        activeRooms: roomReviews.size,
-        totalComments: Array.from(reviewComments.values()).reduce((sum, comments) => sum + comments.length, 0)
-      }
-    });
-
-  } catch (error) {
-    console.error('Failed to get AI service status', error.message);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get service status'
-    });
-  }
-});
+// Status endpoint moved above to avoid route conflict
 
 // Serve static files from build directory
 app.use(express.static(path.join(__dirname, 'build')));

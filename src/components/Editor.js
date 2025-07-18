@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import Codemirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/dracula.css';
@@ -9,8 +9,15 @@ import ACTIONS from '../Actions';
 
 const Editor = ({ socketRef, roomId, onCodeChange }) => {
     const editorRef = useRef(null);
+    
+    // Memoize the code change handler
+    const handleCodeChange = useCallback((code) => {
+        onCodeChange(code);
+    }, [onCodeChange]);
+    
+    // Initialize editor only once
     useEffect(() => {
-        async function init() {
+        if (!editorRef.current) {
             editorRef.current = Codemirror.fromTextArea(
                 document.getElementById('realtimeEditor'),
                 {
@@ -21,35 +28,62 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
                     lineNumbers: true,
                 }
             );
-
-            editorRef.current.on('change', (instance, changes) => {
-                const { origin } = changes;
-                const code = instance.getValue();
-                onCodeChange(code);
-                if (origin !== 'setValue') {
-                    socketRef.current.emit(ACTIONS.CODE_CHANGE, {
-                        roomId,
-                        code,
-                    });
-                }
-            });
         }
-        init();
-    }, []);
-
-    useEffect(() => {
-        if (socketRef.current) {
-            socketRef.current.on(ACTIONS.CODE_CHANGE, ({ code }) => {
-                if (code !== null) {
-                    editorRef.current.setValue(code);
-                }
-            });
-        }
-
+        
         return () => {
-            socketRef.current.off(ACTIONS.CODE_CHANGE);
+            if (editorRef.current) {
+                editorRef.current.toTextArea();
+                editorRef.current = null;
+            }
         };
-    }, [socketRef.current]);
+    }, []);
+    
+    // Handle editor changes
+    useEffect(() => {
+        if (!editorRef.current) return;
+        
+        const handleChange = (instance, changes) => {
+            const { origin } = changes;
+            const code = instance.getValue();
+            
+            handleCodeChange(code);
+            
+            if (origin !== 'setValue' && socketRef.current) {
+                socketRef.current.emit(ACTIONS.CODE_CHANGE, {
+                    roomId,
+                    code,
+                });
+            }
+        };
+        
+        editorRef.current.on('change', handleChange);
+        
+        return () => {
+            if (editorRef.current) {
+                editorRef.current.off('change', handleChange);
+            }
+        };
+    }, [handleCodeChange, roomId, socketRef]);
+
+    // Handle incoming socket messages
+    useEffect(() => {
+        const socket = socketRef.current;
+        if (!socket) return;
+        
+        const handleIncomingCodeChange = ({ code }) => {
+            if (code !== null && editorRef.current) {
+                editorRef.current.setValue(code);
+            }
+        };
+        
+        socket.on(ACTIONS.CODE_CHANGE, handleIncomingCodeChange);
+        
+        return () => {
+            if (socket) {
+                socket.off(ACTIONS.CODE_CHANGE, handleIncomingCodeChange);
+            }
+        };
+    }, [socketRef]);
 
     return <textarea id="realtimeEditor"></textarea>;
 };
