@@ -212,7 +212,22 @@ Focus on providing actionable feedback that helps improve code quality.
   // Parse AI response
   parseAIResponse(aiResponse, originalCode, language) {
     try {
-      const analysis = JSON.parse(aiResponse);
+      // Clean up the response - remove markdown code blocks if present
+      let cleanedResponse = aiResponse;
+
+      // Remove markdown code blocks (```json ... ```)
+      cleanedResponse = cleanedResponse.replace(/```json\s*/g, '');
+      cleanedResponse = cleanedResponse.replace(/```\s*/g, '');
+
+      // Try to find JSON content between curly braces
+      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        cleanedResponse = jsonMatch[0];
+      }
+
+      console.log('Attempting to parse AI response:', cleanedResponse.substring(0, 200) + '...');
+
+      const analysis = JSON.parse(cleanedResponse);
       
       // Validate and sanitize the response
       const sanitizedAnalysis = {
@@ -244,17 +259,21 @@ Focus on providing actionable feedback that helps improve code quality.
         }
       };
 
+      console.log('✅ Successfully parsed AI response. Issues found:', sanitizedAnalysis.issues.length);
       return sanitizedAnalysis;
+
     } catch (error) {
-      console.error('Failed to parse AI response', error.message);
+      console.error('❌ Failed to parse AI response:', error.message);
+      console.error('Raw AI response:', aiResponse);
       
-      // Fallback analysis if parsing fails
+      // Only fall back to hardcoded response as last resort
+      // This indicates the AI provider is not returning valid JSON
       return {
         overall_score: 50,
         summary: 'Analysis completed with limited results due to parsing error',
         issues: [],
         positive_aspects: ['Code successfully analyzed'],
-        recommendations: ['Consider manual code review'],
+        recommendations: ['Consider manual code review - AI response parsing failed'],
         complexity_analysis: {
           cyclomatic_complexity: 'unknown',
           maintainability_index: 50,
@@ -265,7 +284,8 @@ Focus on providing actionable feedback that helps improve code quality.
           analyzed_at: new Date().toISOString(),
           code_length: originalCode.length,
           line_count: originalCode.split('\n').length,
-          parsing_error: true
+          parsing_error: true,
+          ai_response_preview: aiResponse.substring(0, 200)
         }
       };
     }
