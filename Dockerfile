@@ -7,11 +7,16 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /app
 
+# Install necessary build dependencies
+RUN apk add --no-cache python3 make g++ && \
+    npm install -g npm@latest
+
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies for build)
-RUN npm ci --silent && \
+# Clear npm cache and install dependencies
+RUN npm cache clean --force && \
+    npm ci --silent --no-audit --ignore-scripts && \
     npm cache clean --force
 
 # Copy source code
@@ -30,14 +35,16 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set working directory
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for proper signal handling and update npm
+RUN apk add --no-cache dumb-init && \
+    npm install -g npm@latest
 
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production --silent && \
+# Install only production dependencies with better error handling
+RUN npm cache clean --force && \
+    npm ci --only=production --silent --no-audit --ignore-scripts && \
     npm cache clean --force
 
 # Copy built application from builder stage
