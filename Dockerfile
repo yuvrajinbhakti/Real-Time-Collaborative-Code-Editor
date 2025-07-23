@@ -20,9 +20,9 @@ RUN apk add --no-cache \
 # Copy package files
 COPY package*.json ./
 
-# Clear npm cache and install all dependencies
+# Clear npm cache and install all dependencies with verbose output
 RUN npm cache clean --force && \
-    npm ci --silent --no-audit && \
+    npm ci --no-audit && \
     npm cache clean --force
 
 # Copy source code
@@ -50,10 +50,9 @@ RUN apk add --no-cache \
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies with improved error handling
-RUN set -ex && \
-    npm cache clean --force && \
-    npm ci --omit=dev --silent --no-audit && \
+# Install only production dependencies with detailed error output
+RUN npm cache clean --force && \
+    npm ci --omit=dev --no-audit --verbose && \
     npm cache clean --force
 
 # Copy built application from builder stage
