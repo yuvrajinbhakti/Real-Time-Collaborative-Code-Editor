@@ -1,0 +1,56 @@
+# Simple Real-Time Collaborative Code Editor Dockerfile
+# Single-stage build using pre-built files
+
+FROM node:20-alpine AS production
+
+# Create app user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    dumb-init \
+    libc6-compat && \
+    npm install -g npm@latest
+
+# Copy package files
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm cache clean --force && \
+    npm install --only=production --no-audit --legacy-peer-deps && \
+    npm cache clean --force
+
+# Copy pre-built application files
+COPY --chown=nextjs:nodejs build ./build
+COPY --chown=nextjs:nodejs server-enhanced.js ./
+COPY --chown=nextjs:nodejs config ./config
+COPY --chown=nextjs:nodejs services ./services
+COPY --chown=nextjs:nodejs src ./src
+
+# Create logs directory
+RUN mkdir -p logs && chown -R nextjs:nodejs logs
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=5000
+ENV LOG_LEVEL=info
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Switch to non-root user
+USER nextjs
+
+# Expose port
+EXPOSE 5000
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the enhanced server
+CMD ["node", "server-enhanced.js"] 
