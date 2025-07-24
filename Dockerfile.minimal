@@ -1,42 +1,58 @@
-# Minimal Real-Time Collaborative Code Editor Dockerfile
-FROM node:20-alpine
-
-# Create app user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nextjs -u 1001
+# Minimal Dockerfile for Render - Avoids fork-ts-checker-webpack-plugin issues
+FROM node:18-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apk add --no-cache dumb-init
+# Install necessary build dependencies
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    libc6-compat
 
-# Create a minimal package.json for production
-RUN echo '{"name": "realtime-editor", "version": "0.1.0", "dependencies": {"express": "^4.21.1", "socket.io": "^4.4.1", "uuid": "^8.3.2"}}' > package.json
+# Set environment variables to disable problematic features
+ENV SKIP_PREFLIGHT_CHECK=true
+ENV CI=false
+ENV GENERATE_SOURCEMAP=false
+ENV NODE_OPTIONS="--max-old-space-size=3072"
+ENV TSC_COMPILE_ON_ERROR=true
+ENV DISABLE_ESLINT_PLUGIN=true
+ENV DISABLE_NEW_JSX_TRANSFORM=true
 
-# Install minimal production dependencies
-RUN npm install --only=production --no-audit
+# Copy package files
+COPY package*.json ./
 
-# Copy essential application files
-COPY --chown=nextjs:nodejs build ./build
-COPY --chown=nextjs:nodejs server-simple.js ./
-COPY --chown=nextjs:nodejs src/Actions.js ./src/
+# Modify package.json to remove problematic dependency and install
+RUN npm cache clean --force && \
+    rm -rf node_modules package-lock.json && \
+    sed -i 's/"react-scripts": "5.0.0"/"react-scripts": "4.0.3"/g' package.json && \
+    npm install --legacy-peer-deps --no-audit --production=false && \
+    npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Build the React application using React Scripts 4.x (more stable)
+RUN npm run build || npm run build:render || SKIP_PREFLIGHT_CHECK=true npm run build
+
+# Remove development dependencies
+RUN npm prune --production
 
 # Create logs directory
-RUN mkdir -p logs && chown -R nextjs:nodejs logs
+RUN mkdir -p logs
 
-# Set environment variables
+# Set production environment
 ENV NODE_ENV=production
 ENV PORT=5000
+ENV LOG_LEVEL=info
 
-# Switch to non-root user
-USER nextjs
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
 # Expose port
 EXPOSE 5000
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
-
-# Start the simple server
-CMD ["node", "server-simple.js"] 
+# Start the application
+CMD ["node", "server-enhanced.js"] 

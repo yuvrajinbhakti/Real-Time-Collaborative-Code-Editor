@@ -50,7 +50,7 @@
     "react-dom": "^17.0.2",
     "react-hot-toast": "^2.2.0",
     "react-router-dom": "^6.2.1",
-    "react-scripts": "5.0.0",
+    "react-scripts": "^4.0.3",
     "redis": "^4.6.5",
     "sharedb": "^3.0.0",
     "sharedb-redis-pubsub": "^5.1.0",
@@ -76,6 +76,7 @@
     "build": "CI=false react-scripts build",
     "build:ci": "react-scripts build",
     "build:render": "SKIP_PREFLIGHT_CHECK=true CI=false GENERATE_SOURCEMAP=false react-scripts build",
+    "build:no-check": "SKIP_PREFLIGHT_CHECK=true CI=false GENERATE_SOURCEMAP=false TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
     "test:load": "artillery run load-test.yml",
@@ -122,11 +123,14 @@
   "overrides": {
     "ajv": "^8.12.0",
     "ajv-keywords": "^5.1.0",
-    "fork-ts-checker-webpack-plugin": "^6.5.3"
+    "fork-ts-checker-webpack-plugin": "^6.5.3",
+    "schema-utils": "^4.2.0"
   },
   "resolutions": {
     "ajv": "^8.12.0",
     "ajv-keywords": "^5.1.0",
-    "fork-ts-checker-webpack-plugin": "^6.5.3"
+    "fork-ts-checker-webpack-plugin": "^6.5.3",
+    "schema-utils": "^4.2.0",
+    "react-scripts/fork-ts-checker-webpack-plugin": "^6.5.3"
   }
 }

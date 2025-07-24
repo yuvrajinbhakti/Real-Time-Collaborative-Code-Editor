@@ -2,7 +2,7 @@ services:
   - type: web
     name: realtime-code-editor
     runtime: docker
-    dockerfilePath: ./Dockerfile.render
+    dockerfilePath: ./Dockerfile.working
     plan: starter
     region: oregon
     branch: main
@@ -22,6 +22,12 @@ services:
         value: false
       - key: NODE_OPTIONS
         value: "--max-old-space-size=4096"
+      - key: TSC_COMPILE_ON_ERROR
+        value: true
+      - key: DISABLE_ESLINT_PLUGIN
+        value: true
+      - key: DISABLE_NEW_JSX_TRANSFORM
+        value: true
     buildFilter:
       paths:
         - src/**

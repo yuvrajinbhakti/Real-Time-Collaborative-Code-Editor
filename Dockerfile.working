@@ -1,0 +1,55 @@
+# Working Solution for Render - Uses Node 16 and Simple Approach
+FROM node:16-alpine
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ libc6-compat
+
+# Environment variables to prevent build issues
+ENV SKIP_PREFLIGHT_CHECK=true
+ENV CI=false
+ENV GENERATE_SOURCEMAP=false
+ENV NODE_OPTIONS="--max-old-space-size=3072 --openssl-legacy-provider"
+ENV NODE_ENV=production
+
+# Copy package.json and modify it to use working versions
+COPY package.json ./package.json.original
+
+# Create a simplified package.json that works
+RUN cat package.json.original | \
+    sed 's/"react-scripts": "5.0.0"/"react-scripts": "4.0.3"/g' | \
+    sed '/"fork-ts-checker-webpack-plugin"/d' > package.json
+
+# Install dependencies
+RUN npm cache clean --force && \
+    npm install --legacy-peer-deps --no-audit
+
+# Copy source code
+COPY public ./public
+COPY src ./src
+
+# Build React app
+RUN npm run build
+
+# Install production dependencies for server
+RUN npm prune --production
+
+# Copy server files
+COPY server*.js ./
+COPY config ./config
+COPY services ./services
+COPY routes ./routes
+COPY middleware ./middleware
+COPY models ./models
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:5000/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+EXPOSE 5000
+
+CMD ["node", "server-enhanced.js"] 

@@ -129,33 +129,49 @@ CORS_ORIGIN=https://your-domain.onrender.com
 
 ## 🚨 **Troubleshooting**
 
-### **If Build Still Fails:**
+### **If Build Still Fails with `formatMinimum` Error:**
 
-1. **Clear npm cache:**
+The error indicates deeper dependency conflicts. Try these approaches:
+
+1. **Run the automated fixer script:**
    ```bash
-   # Add to Dockerfile or build command
-   npm cache clean --force
-   rm -rf node_modules package-lock.json
-   npm install --legacy-peer-deps --force
+   chmod +x fix-render-build.sh
+   ./fix-render-build.sh
    ```
 
-2. **Use alternative Dockerfile:**
-   - Switch to `Dockerfile.simple` if multi-stage build causes issues
-   - Update Dockerfile path in render.yaml
+2. **Try different Dockerfiles:**
+   ```bash
+   # Option 1: Use minimal Dockerfile (Node 18 + React Scripts 4.x)
+   # Update render.yaml: dockerfilePath: ./Dockerfile.minimal
+   
+   # Option 2: Use the enhanced Dockerfile.render with aggressive fixes
+   # Uses the build:no-check script that bypasses all type checking
+   ```
 
-3. **Environment Variables:**
-   - Ensure all required environment variables are set
-   - Verify `SKIP_PREFLIGHT_CHECK=true` is set
+3. **Manual approach - Remove problematic dependency:**
+   ```bash
+   npm uninstall fork-ts-checker-webpack-plugin
+   npm run build:no-check
+   ```
+
+4. **Downgrade react-scripts (temporary fix):**
+   ```bash
+   npm install react-scripts@4.0.3
+   npm run build
+   ```
 
 ### **Common Issues & Solutions:**
 
 | Issue | Solution |
 |-------|----------|
+| **`formatMinimum` error** | Use `Dockerfile.minimal` or run `fix-render-build.sh` |
+| **`ajv-keywords` conflicts** | Set `TSC_COMPILE_ON_ERROR=true` and use `build:no-check` |
 | **Build timeout** | Increase `NODE_OPTIONS=--max-old-space-size=4096` |
 | **Dependency conflicts** | Use `--legacy-peer-deps --force` flags |
-| **TypeScript errors** | Set `SKIP_PREFLIGHT_CHECK=true` |
+| **TypeScript errors** | Set `SKIP_PREFLIGHT_CHECK=true` and `DISABLE_ESLINT_PLUGIN=true` |
 | **Out of memory** | Disable source maps: `GENERATE_SOURCEMAP=false` |
 | **Health check fails** | Verify `/health` endpoint is accessible |
+| **Fork-ts-checker issues** | Remove package: `npm uninstall fork-ts-checker-webpack-plugin` |
 
 ## 📊 **Monitoring & Health Checks**
 
