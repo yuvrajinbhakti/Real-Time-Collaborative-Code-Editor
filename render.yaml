@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: realtime-code-editor
+    runtime: docker
+    dockerfilePath: ./Dockerfile.render
+    plan: starter
+    region: oregon
+    branch: main
+    healthCheckPath: /health
+    env:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: LOG_LEVEL
+        value: info
+      - key: SKIP_PREFLIGHT_CHECK
+        value: true
+      - key: CI
+        value: false
+      - key: GENERATE_SOURCEMAP
+        value: false
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=4096"
+    buildFilter:
+      paths:
+        - src/**
+        - public/**
+        - package.json
+        - package-lock.json
+        - Dockerfile.render
+      ignoredPaths:
+        - README.md
+        - "*.md"
+        - test/**
+        - tests/** 

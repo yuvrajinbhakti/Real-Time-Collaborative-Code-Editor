@@ -75,6 +75,7 @@
     "start:dev": "concurrently \"npm run start:redis\" \"nodemon server.js\"",
     "build": "CI=false react-scripts build",
     "build:ci": "react-scripts build",
+    "build:render": "SKIP_PREFLIGHT_CHECK=true CI=false GENERATE_SOURCEMAP=false react-scripts build",
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
     "test:load": "artillery run load-test.yml",
@@ -119,6 +120,13 @@
     "vercel": "^30.2.3"
   },
   "overrides": {
-    "ajv": "^8.12.0"
+    "ajv": "^8.12.0",
+    "ajv-keywords": "^5.1.0",
+    "fork-ts-checker-webpack-plugin": "^6.5.3"
+  },
+  "resolutions": {
+    "ajv": "^8.12.0",
+    "ajv-keywords": "^5.1.0",
+    "fork-ts-checker-webpack-plugin": "^6.5.3"
   }
 }
