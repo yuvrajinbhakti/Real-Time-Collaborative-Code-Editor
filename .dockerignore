@@ -8,8 +8,8 @@ yarn-error.log*
 coverage
 *.lcov
 
-# Production build (commented out as we need it for deployment)
-# build
+# Production build (we'll build fresh in container)
+build
 
 # Runtime data
 pids

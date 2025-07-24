@@ -14,8 +14,7 @@ RUN apk add --no-cache \
     g++ \
     pkgconfig \
     vips-dev \
-    libc6-compat && \
-    npm install -g npm@latest
+    libc6-compat
 
 # Set environment variables to prevent build issues
 ENV SKIP_PREFLIGHT_CHECK=true
@@ -26,11 +25,12 @@ ENV NODE_OPTIONS="--max-old-space-size=3072 --openssl-legacy-provider"
 # Copy package files and fix them
 COPY package*.json ./
 
-# Fix package.json to use working versions
+# Fix package.json to use working versions and install dependencies
 RUN npm cache clean --force && \
     rm -rf node_modules package-lock.json && \
     sed -i 's/"react-scripts": "5.0.0"/"react-scripts": "4.0.3"/g' package.json && \
-    npm install --no-audit --legacy-peer-deps && \
+    npm config set registry https://registry.npmjs.org/ && \
+    npm install --legacy-peer-deps && \
     npm cache clean --force
 
 # Copy source code
@@ -49,11 +49,10 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set working directory
 WORKDIR /app
 
-# Install runtime dependencies and update npm
+# Install runtime dependencies
 RUN apk add --no-cache \
     dumb-init \
-    libc6-compat && \
-    npm install -g npm@latest
+    libc6-compat
 
 # Copy package files
 COPY package*.json ./
@@ -61,7 +60,8 @@ COPY package*.json ./
 # Install only production dependencies using npm install
 RUN npm cache clean --force && \
     rm -rf node_modules package-lock.json && \
-    npm install --only=production --no-audit --legacy-peer-deps --force && \
+    npm config set registry https://registry.npmjs.org/ && \
+    npm install --only=production --legacy-peer-deps && \
     npm cache clean --force
 
 # Copy built application from builder stage
