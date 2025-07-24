@@ -2,7 +2,7 @@ services:
   - type: web
     name: realtime-code-editor
     runtime: docker
-    dockerfilePath: ./Dockerfile.working
+    dockerfilePath: ./Dockerfile
     plan: starter
     region: oregon
     branch: main
@@ -21,7 +21,7 @@ services:
       - key: GENERATE_SOURCEMAP
         value: false
       - key: NODE_OPTIONS
-        value: "--max-old-space-size=4096"
+        value: "--max-old-space-size=3072 --openssl-legacy-provider"
       - key: TSC_COMPILE_ON_ERROR
         value: true
       - key: DISABLE_ESLINT_PLUGIN

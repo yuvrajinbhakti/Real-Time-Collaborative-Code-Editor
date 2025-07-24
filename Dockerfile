@@ -1,8 +1,8 @@
 # Enhanced Real-Time Collaborative Code Editor Dockerfile
-# Multi-stage build for production optimization
+# Fixed for Render deployment - Node 16 with working dependencies
 
 # Stage 1: Build stage
-FROM node:20-alpine AS builder
+FROM node:16-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -17,23 +17,30 @@ RUN apk add --no-cache \
     libc6-compat && \
     npm install -g npm@latest
 
-# Copy package files
+# Set environment variables to prevent build issues
+ENV SKIP_PREFLIGHT_CHECK=true
+ENV CI=false
+ENV GENERATE_SOURCEMAP=false
+ENV NODE_OPTIONS="--max-old-space-size=3072 --openssl-legacy-provider"
+
+# Copy package files and fix them
 COPY package*.json ./
 
-# Install dependencies using npm install (more flexible than npm ci)
+# Fix package.json to use working versions
 RUN npm cache clean --force && \
     rm -rf node_modules package-lock.json && \
-    npm install --no-audit --legacy-peer-deps --force && \
+    sed -i 's/"react-scripts": "5.0.0"/"react-scripts": "4.0.3"/g' package.json && \
+    npm install --no-audit --legacy-peer-deps && \
     npm cache clean --force
 
 # Copy source code
 COPY . .
 
-# Build the React application with CI disabled and legacy peer deps
-RUN SKIP_PREFLIGHT_CHECK=true CI=false npm run build
+# Build the React application
+RUN npm run build
 
 # Stage 2: Production stage
-FROM node:20-alpine AS production
+FROM node:16-alpine AS production
 
 # Create app user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -71,6 +78,9 @@ RUN mkdir -p logs && chown -R nextjs:nodejs logs
 ENV NODE_ENV=production
 ENV PORT=5000
 ENV LOG_LEVEL=info
+ENV SKIP_PREFLIGHT_CHECK=true
+ENV CI=false
+ENV NODE_OPTIONS="--max-old-space-size=3072 --openssl-legacy-provider"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
