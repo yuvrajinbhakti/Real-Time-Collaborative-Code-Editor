@@ -28,19 +28,18 @@ ENV DISABLE_NEW_JSX_TRANSFORM=true
 # Copy package files and fix them
 COPY package*.json ./
 
-# Fix package.json to use working versions and install dependencies
+# Install dependencies with fixed versions
 RUN npm cache clean --force && \
     rm -rf node_modules package-lock.json && \
-    sed -i 's/"react-scripts": "5.0.0"/"react-scripts": "4.0.3"/g' package.json && \
     npm config set registry https://registry.npmjs.org/ && \
-    npm install --legacy-peer-deps --no-audit --production=false && \
+    npm install --legacy-peer-deps --no-audit --force --production=false && \
     npm cache clean --force
 
 # Copy source code
 COPY . .
 
-# Build the React application
-RUN npm run build || npm run build:render || SKIP_PREFLIGHT_CHECK=true npm run build
+# Build the React application with multiple fallback strategies
+RUN npm run build:no-check || npm run build:render || (npm cache clean --force && npm run build) || (rm -rf node_modules && npm install --force && npm run build)
 
 # Stage 2: Production stage
 FROM node:18-alpine AS production
