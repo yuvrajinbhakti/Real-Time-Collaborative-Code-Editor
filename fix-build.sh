@@ -15,7 +15,9 @@ npm install --legacy-peer-deps --no-audit --force
 
 # Try building with different strategies
 echo "Attempting to build..."
-if npm run build:no-check; then
+if npm run build:simple; then
+    echo "✅ Build successful with build:simple"
+elif npm run build:no-check; then
     echo "✅ Build successful with build:no-check"
 elif npm run build:render; then
     echo "✅ Build successful with build:render"

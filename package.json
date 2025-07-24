@@ -77,6 +77,7 @@
     "build:ci": "react-scripts build",
     "build:render": "SKIP_PREFLIGHT_CHECK=true CI=false GENERATE_SOURCEMAP=false react-scripts build",
     "build:no-check": "SKIP_PREFLIGHT_CHECK=true CI=false GENERATE_SOURCEMAP=false TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build:simple": "SKIP_PREFLIGHT_CHECK=true CI=false GENERATE_SOURCEMAP=false TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true INLINE_RUNTIME_CHUNK=false NODE_ENV=production react-scripts build",
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
     "test:load": "artillery run load-test.yml",
@@ -121,22 +122,26 @@
     "vercel": "^30.2.3"
   },
   "overrides": {
-    "ajv": "^8.12.0",
-    "ajv-keywords": "^5.1.0",
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
     "fork-ts-checker-webpack-plugin": "^6.5.3",
-    "schema-utils": "^3.3.0",
+    "schema-utils": "^2.7.1",
     "mini-css-extract-plugin": "^1.6.2",
-    "webpack": "^4.44.2"
+    "webpack": "4.44.2",
+    "terser-webpack-plugin": "^3.1.0"
   },
   "resolutions": {
-    "ajv": "^8.12.0",
-    "ajv-keywords": "^5.1.0",
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
     "fork-ts-checker-webpack-plugin": "^6.5.3",
-    "schema-utils": "^3.3.0",
+    "schema-utils": "^2.7.1",
     "mini-css-extract-plugin": "^1.6.2",
-    "webpack": "^4.44.2",
+    "webpack": "4.44.2",
+    "terser-webpack-plugin": "^3.1.0",
     "react-scripts/fork-ts-checker-webpack-plugin": "^6.5.3",
     "react-scripts/mini-css-extract-plugin": "^1.6.2",
-    "react-scripts/schema-utils": "^3.3.0"
+    "react-scripts/schema-utils": "^2.7.1",
+    "react-scripts/webpack": "4.44.2",
+    "react-scripts/terser-webpack-plugin": "^3.1.0"
   }
 }
