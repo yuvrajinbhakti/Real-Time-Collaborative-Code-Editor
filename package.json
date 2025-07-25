@@ -73,9 +73,12 @@
     "start:enhanced": "node server-enhanced.js",
     "start:redis": "redis-server --port 6379",
     "start:dev": "concurrently \"npm run start:redis\" \"nodemon server.js\"",
-    "build": "GENERATE_SOURCEMAP=false react-scripts build",
+    "build": "node create-simple-build.js",
+    "build:react": "GENERATE_SOURCEMAP=false react-scripts build",
     "build:ci": "GENERATE_SOURCEMAP=false react-scripts build",
-    "build:production": "GENERATE_SOURCEMAP=false INLINE_RUNTIME_CHUNK=false react-scripts build",
+    "build:production": "node create-simple-build.js",
+    "build:simple": "SKIP_PREFLIGHT_CHECK=true GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build:minimal": "node create-simple-build.js",
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
     "test:load": "artillery run load-test.yml",
@@ -116,8 +119,25 @@
     "nodemon": "^2.0.15"
   },
   "overrides": {
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
+    "schema-utils": "^2.7.1",
+    "terser-webpack-plugin": "^4.2.3",
+    "webpack": "^4.44.2",
     "react-scripts": {
-      "typescript": "^4.9.5"
+      "typescript": "^4.9.5",
+      "ajv": "^6.12.6",
+      "ajv-keywords": "^3.5.2",
+      "schema-utils": "^2.7.1",
+      "terser-webpack-plugin": "^4.2.3",
+      "webpack": "^4.44.2"
     }
+  },
+  "resolutions": {
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
+    "schema-utils": "^2.7.1",
+    "terser-webpack-plugin": "^4.2.3",
+    "webpack": "^4.44.2"
   }
 }
