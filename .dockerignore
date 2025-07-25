@@ -1,41 +1,35 @@
-# Dependencies
+# Dependencies and cache
 node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.npm
+.cache
+.eslintcache
 
-# Testing
-coverage
-*.lcov
-
-# Production build (we'll build fresh in container)
-build
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Logs
-logs
-*.log
-
-# Environment files
-.env
+# Local environment files
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Cache directories
-.npm
-.eslintcache
-.stylelintcache
-.cache
-.parcel-cache
+# Logs and runtime data
+logs
+*.log
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# IDE files
+# Testing and coverage
+coverage
+*.lcov
+test/
+tests/
+*.test.js
+*.spec.js
+
+# IDE and editor files
 .idea
 .vscode
 *.swp
@@ -51,30 +45,34 @@ logs
 ehthumbs.db
 Thumbs.db
 
-# Git
+# Version control
 .git
 .gitignore
 
-# Docker
+# Build artifacts and logs
+build-log.txt
+docker-build.log
+docker-compose.log
+
+# Temporary and debug files
+tmp/
+temp/
+debug-*
+test-*
+fix-*
+
+# Multiple Docker configurations (use only main Dockerfile)
+Dockerfile.*
 docker-compose*
 .dockerignore
 
 # Documentation
-README*.md
 *.md
+!README.md
 
-# Test files
-test/
-tests/
-*.test.js
-*.spec.js
+# Development scripts
+setup-*
+vercel-*
 
-# Build artifacts
-build-log.txt
-docker-build.log
-debug-docker-build.sh
-test-*.js
-
-# Temporary folders
-tmp/
-temp/ 
+# Production build (will be built fresh)
+build 

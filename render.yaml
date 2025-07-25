@@ -2,11 +2,12 @@ services:
   - type: web
     name: realtime-code-editor
     runtime: docker
-    dockerfilePath: ./Dockerfile.render
+    dockerfilePath: ./Dockerfile
     plan: starter
     region: oregon
     branch: main
     healthCheckPath: /health
+    autoDeploy: true
     env:
       - key: NODE_ENV
         value: production
@@ -15,28 +16,30 @@ services:
       - key: LOG_LEVEL
         value: info
       - key: SKIP_PREFLIGHT_CHECK
-        value: true
-      - key: CI
-        value: false
+        value: "true"
       - key: GENERATE_SOURCEMAP
-        value: false
+        value: "false"
+      - key: INLINE_RUNTIME_CHUNK
+        value: "false"
       - key: NODE_OPTIONS
-        value: "--max-old-space-size=3072"
-      - key: TSC_COMPILE_ON_ERROR
-        value: true
-      - key: DISABLE_ESLINT_PLUGIN
-        value: true
-      - key: DISABLE_NEW_JSX_TRANSFORM
-        value: true
+        value: "--max-old-space-size=4096"
     buildFilter:
       paths:
         - src/**
         - public/**
         - package.json
         - package-lock.json
-        - Dockerfile.render
+        - Dockerfile
+        - server-simple.js
+        - config/**
+        - services/**
+        - routes/**
+        - middleware/**
+        - models/**
       ignoredPaths:
-        - README.md
         - "*.md"
-        - test/**
-        - tests/** 
+        - "test*"
+        - "debug*"
+        - "fix*"
+        - "Dockerfile.*"
+        - docker-compose* 
