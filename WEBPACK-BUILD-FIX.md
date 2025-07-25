@@ -16,6 +16,7 @@ The build failure was caused by:
 2. **React Scripts Issues**: webpack configuration conflicts in react-scripts 5.x
 3. **Fork-ts-checker-webpack-plugin**: Schema validation errors with newer versions
 4. **Dependency Version Mismatches**: Conflicting package versions in the dependency tree
+5. **NODE_OPTIONS Flag Error**: `--openssl-legacy-provider` not allowed in Node 16
 
 ## ✅ **Applied Fixes**
 
@@ -24,6 +25,7 @@ The build failure was caused by:
 - **React Scripts**: Using stable version 4.0.3
 - **Minimal Dependencies**: Custom package.json with only essential packages
 - **Environment Variables**: Proper configuration for legacy support
+- **NODE_OPTIONS Fix**: Removed `--openssl-legacy-provider` (not supported in Node 16)
 
 ### **Solution 2: Server-Only Build (Dockerfile.backup)**
 - **No React Build**: Bypasses all frontend build issues entirely
@@ -67,7 +69,7 @@ Both solutions use these critical environment variables:
 ENV SKIP_PREFLIGHT_CHECK=true
 ENV CI=false
 ENV GENERATE_SOURCEMAP=false
-ENV NODE_OPTIONS="--max-old-space-size=3072 --openssl-legacy-provider"
+ENV NODE_OPTIONS="--max-old-space-size=3072"
 ENV TSC_COMPILE_ON_ERROR=true
 ENV DISABLE_ESLINT_PLUGIN=true
 ```

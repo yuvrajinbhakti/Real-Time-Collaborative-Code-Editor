@@ -15,7 +15,7 @@ RUN apk add --no-cache \
 ENV SKIP_PREFLIGHT_CHECK=true
 ENV CI=false
 ENV GENERATE_SOURCEMAP=false
-ENV NODE_OPTIONS="--max-old-space-size=3072 --openssl-legacy-provider"
+ENV NODE_OPTIONS="--max-old-space-size=3072"
 ENV TSC_COMPILE_ON_ERROR=true
 ENV DISABLE_ESLINT_PLUGIN=true
 ENV DISABLE_NEW_JSX_TRANSFORM=true
