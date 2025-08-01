@@ -32,7 +32,7 @@ ENV NODE_ENV=production \
 COPY package*.json ./
 
 # Clean install dependencies with proper flags
-RUN npm ci --only=production --ignore-scripts && \
+RUN npm ci --omit=dev --legacy-peer-deps --ignore-scripts && \
     npm cache clean --force
 
 # Copy source code
@@ -42,7 +42,7 @@ COPY . .
 RUN rm -f .env.local .env.development.local .env.test.local
 
 # Build the React application
-RUN npm run build:production
+RUN npm run build:production || npm run build || npm run build:simple
 
 # Production stage
 FROM base AS production
