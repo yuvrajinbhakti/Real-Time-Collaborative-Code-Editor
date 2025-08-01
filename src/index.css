@@ -7,3 +7,18 @@ body {
     -moz-osx-font-smoothing: grayscale;
     background: #1c1e29;
 }
+
+/* Pulse animation for AI Review button */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

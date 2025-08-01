@@ -143,7 +143,24 @@ const EditorPage = () => {
 
     return (
         <div className="mainWrap">
-            <div className="aside">
+            {/* DEPLOYMENT VERIFICATION BANNER - Remove after confirming deployment */}
+            <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+                color: 'white',
+                padding: '8px',
+                textAlign: 'center',
+                fontWeight: 'bold',
+                zIndex: 9999,
+                fontSize: '14px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+            }}>
+                🚀 AI-POWERED VERSION 2.0 DEPLOYED ✅ | Full React App with AI Code Review Features
+            </div>
+            <div className="aside" style={{ marginTop: '40px' }}>
                 <div className="asideInner">
                     <div className="logo">
                         <img
@@ -169,11 +186,17 @@ const EditorPage = () => {
                     className="btn aiReviewBtn" 
                     onClick={handleReviewCode}
                     style={{ 
-                        background: '#2ed573',
-                        marginBottom: '10px'
+                        background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+                        color: 'white',
+                        marginBottom: '10px',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        border: '3px solid #fff',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                        animation: 'pulse 2s infinite'
                     }}
                 >
-                    🔍 Review Code
+                    🤖 AI REVIEW CODE ✨
                 </button>
                 <button className="btn leaveBtn" onClick={leaveRoom}>
                     Leave
