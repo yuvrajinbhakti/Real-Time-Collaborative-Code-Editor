@@ -73,7 +73,7 @@
     "start:enhanced": "node server-enhanced.js",
     "start:redis": "redis-server --port 6379",
     "start:dev": "concurrently \"npm run start:redis\" \"nodemon server.js\"",
-    "build": "node create-simple-build.js",
+    "build": "GENERATE_SOURCEMAP=false react-scripts build",
     "build:react": "GENERATE_SOURCEMAP=false react-scripts build",
     "build:ci": "GENERATE_SOURCEMAP=false react-scripts build",
     "build:production": "node create-simple-build.js",

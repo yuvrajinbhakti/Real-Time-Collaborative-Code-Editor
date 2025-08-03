@@ -5,7 +5,7 @@ services:
     plan: starter
     region: oregon
     branch: main
-    buildCommand: npm ci --legacy-peer-deps && npm run build:ci
+    buildCommand: npm ci --legacy-peer-deps && npm run build
     startCommand: node server.js
     healthCheckPath: /health
     autoDeploy: true
