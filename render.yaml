@@ -1,12 +1,11 @@
 services:
   - type: web
     name: realtime-code-editor
-    runtime: node
+    runtime: docker
     plan: starter
     region: oregon
     branch: main
-    buildCommand: npm ci --legacy-peer-deps && npm run build
-    startCommand: node server.js
+    dockerfilePath: ./Dockerfile.render
     healthCheckPath: /health
     autoDeploy: true
     env:
@@ -18,10 +17,14 @@ services:
         value: info
       - key: SKIP_PREFLIGHT_CHECK
         value: "true"
+      - key: CI
+        value: "false"
       - key: GENERATE_SOURCEMAP
         value: "false"
       - key: INLINE_RUNTIME_CHUNK
         value: "false"
+      - key: DISABLE_ESLINT_PLUGIN
+        value: "true"
       - key: NODE_OPTIONS
         value: "--max-old-space-size=2048"
       # AI Code Review Configuration (Optional)
@@ -31,6 +34,15 @@ services:
       # AI_PROVIDER: gemini (or 'openai')
       # Redis Configuration (Optional for scaling)
       # REDIS_URL: your_redis_url_here
+      # REDIS_HOST: your_redis_host
+      # REDIS_PORT: 6379
+      # Performance Configuration
+      - key: MAX_CONCURRENT_USERS
+        value: "1000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "60000"
     buildFilter:
       paths:
         - src/**
@@ -44,12 +56,14 @@ services:
         - middleware/**
         - models/**
         - build/**
+        - Dockerfile.render
       ignoredPaths:
         - "*.md"
         - "test*"
         - "debug*"
         - "fix*"
-        - "Dockerfile*"
+        - "Dockerfile"
         - docker-compose*
         - logs/**
-        - node_modules/** 
+        - node_modules/**
+        - .git/** 

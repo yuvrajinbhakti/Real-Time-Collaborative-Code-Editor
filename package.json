@@ -79,6 +79,8 @@
     "build:production": "node create-simple-build.js",
     "build:simple": "SKIP_PREFLIGHT_CHECK=true GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build:minimal": "node create-simple-build.js",
+    "build:render": "SKIP_PREFLIGHT_CHECK=true CI=false GENERATE_SOURCEMAP=false DISABLE_ESLINT_PLUGIN=true react-scripts build",
+    "build:no-check": "SKIP_PREFLIGHT_CHECK=true TSC_COMPILE_ON_ERROR=true DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "dev": "nodemon dev-server.js",
     "test": "react-scripts test",
     "test:load": "artillery run load-test.yml",

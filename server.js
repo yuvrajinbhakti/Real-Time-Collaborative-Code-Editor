@@ -8,6 +8,7 @@ const ACTIONS = require('./src/Actions');
 // Import AI and enhanced services (with fallbacks)
 let aiCodeReviewService;
 let logger = console; // Fallback to console if logger service not available
+let monitoring;
 
 try {
   aiCodeReviewService = require('./services/aiCodeReview');
@@ -28,6 +29,22 @@ try {
   console.log('⚠️ Logger service not available, using console');
 }
 
+try {
+  monitoring = require('./services/monitoring');
+  console.log('✅ Monitoring service loaded');
+} catch (error) {
+  console.log('⚠️ Monitoring service not available');
+  // Create mock monitoring service
+  monitoring = {
+    start: () => {},
+    recordRequest: () => {},
+    recordAIRequest: () => {},
+    recordError: () => {},
+    updateActiveConnections: () => {},
+    getMetrics: () => ({ status: 'unknown' })
+  };
+}
+
 // In-memory storage for collaborative reviews (directly in server.js)
 const collaborativeReviews = new Map(); // reviewId -> review object
 const roomReviews = new Map();          // roomId -> array of reviewIds
@@ -45,6 +62,9 @@ function generateCommentId() {
 // Initialize services
 console.log('🤖 Initializing AI Code Review service...');
 aiCodeReviewService.initialize();
+
+console.log('📊 Starting monitoring service...');
+monitoring.start();
 
 // Setup periodic cleanup for AI Code Review service (every hour)
 setInterval(() => {
@@ -109,12 +129,15 @@ const io = new Server(server, {
 
 // API routes
 app.get('/api/status', (req, res) => {
+  monitoring.recordRequest();
   const aiMetrics = aiCodeReviewService.getMetrics();
+  const systemMetrics = monitoring.getMetrics();
+  
   res.json({ 
     status: 'online', 
     mode: process.env.NODE_ENV || 'production', 
     timestamp: new Date().toISOString(),
-    platform: 'Railway',
+    platform: 'Render',
     features: {
       aiCodeReview: aiMetrics.isEnabled,
       aiProvider: aiMetrics.provider || 'none',
@@ -122,6 +145,13 @@ app.get('/api/status', (req, res) => {
       collaborativeReviews: collaborativeReviews.size,
       activeRooms: roomReviews.size,
       totalComments: Array.from(reviewComments.values()).reduce((sum, comments) => sum + comments.length, 0)
+    },
+    performance: {
+      uptime: systemMetrics.uptime,
+      requests: systemMetrics.requests,
+      activeConnections: systemMetrics.activeConnections,
+      systemHealth: systemMetrics.status,
+      alerts: monitoring.getAlerts()
     }
   });
 });

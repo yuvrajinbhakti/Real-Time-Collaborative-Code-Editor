@@ -194,12 +194,27 @@ curl http://localhost:5000/api/ai-review/status
 ## 🚀 **Deployment Options**
 
 ### **1. Render (Recommended - Free Tier Available)**
+
+**Quick Deploy (Recommended):**
 ```bash
-# Auto-deploy with git push
+# Validate deployment readiness
+chmod +x validate-deployment.sh
+./validate-deployment.sh
+
+# Deploy to Render
 git add .
 git commit -m "Deploy to Render"
 git push origin main
 ```
+
+**Manual Setup:**
+1. Fork/Clone this repository
+2. Connect to Render Dashboard
+3. Render auto-detects `render.yaml` configuration
+4. Add AI API keys in Environment Variables (optional):
+   - `GEMINI_API_KEY` (free option)
+   - `OPENAI_API_KEY` (paid option)
+5. Deploy!
 
 ### **2. Docker (Local/Cloud)**
 ```bash
