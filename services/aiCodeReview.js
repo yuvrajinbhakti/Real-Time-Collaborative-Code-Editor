@@ -14,6 +14,11 @@ class AICodeReviewService {
 
   // Initialize the AI service
   initialize() {
+    console.log('🔍 Checking AI service configuration...');
+    console.log('  - GEMINI_API_KEY:', this.geminiApiKey ? 'Set' : 'Not set');
+    console.log('  - OPENAI_API_KEY:', this.openaiApiKey ? 'Set' : 'Not set');
+    console.log('  - AI_PROVIDER:', this.aiProvider);
+    
     if (!this.isEnabled) {
       console.log('⚠️ AI Code Review service disabled - No API key provided (OPENAI_API_KEY or GEMINI_API_KEY)');
       return;

@@ -67,7 +67,7 @@
   },
   "scripts": {
     "start:front": "react-scripts start",
-    "start": "npm run build && node server-simple.js",
+    "start": "npm run build && node server.js",
     "start:simple": "node server-simple.js",
     "start:ai": "node server.js",
     "start:enhanced": "node server-enhanced.js",

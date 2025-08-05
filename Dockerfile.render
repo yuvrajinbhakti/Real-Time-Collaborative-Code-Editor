@@ -38,9 +38,9 @@ RUN npm ci --legacy-peer-deps --no-audit --prefer-offline && \
 # Copy source code
 COPY . .
 
-# Remove conflicting files and build
+# Remove conflicting files and build React app
 RUN rm -f .env.local .env.development.local .env.test.local && \
-    npm run build:simple || npm run build
+    npm run build:render
 
 # Create required directories and set permissions
 RUN mkdir -p logs && \

@@ -61,7 +61,12 @@ function generateCommentId() {
 
 // Initialize services
 console.log('🤖 Initializing AI Code Review service...');
-aiCodeReviewService.initialize();
+try {
+  aiCodeReviewService.initialize();
+  console.log('✅ AI Code Review service initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize AI service:', error.message);
+}
 
 console.log('📊 Starting monitoring service...');
 monitoring.start();
