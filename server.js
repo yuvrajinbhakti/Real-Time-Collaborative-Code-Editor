@@ -501,9 +501,37 @@ app.post('/api/ai-review/analyze', async (req, res) => {
 // Serve static files from build directory
 app.use(express.static(path.join(__dirname, 'build')));
 
+// Debug endpoint to check build directory
+app.get('/debug/build', (req, res) => {
+  const fs = require('fs');
+  const buildPath = path.join(__dirname, 'build');
+  const indexPath = path.join(buildPath, 'index.html');
+  
+  res.json({
+    buildDirExists: fs.existsSync(buildPath),
+    indexHtmlExists: fs.existsSync(indexPath),
+    buildContents: fs.existsSync(buildPath) ? fs.readdirSync(buildPath) : 'N/A',
+    buildPath: buildPath,
+    workingDir: __dirname
+  });
+});
+
 // Catch all handler for React Router
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  const indexPath = path.join(__dirname, 'build', 'index.html');
+  const fs = require('fs');
+  
+  // Check if build directory exists
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // Fallback: serve a simple redirect to build the app
+    res.status(503).send(`
+      <h1>Building Application...</h1>
+      <p>The React build is not ready yet. Please wait a moment and refresh.</p>
+      <script>setTimeout(() => window.location.reload(), 10000);</script>
+    `);
+  }
 });
 
 const userSocketMap = {};
