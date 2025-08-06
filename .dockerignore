@@ -1,37 +1,25 @@
-# Dependencies and cache
+# Docker ignore file for Render deployment
+# This prevents the "src: is a directory" error
+
+# Dependencies
 node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.npm
-.cache
-.eslintcache
 
-# Local environment files
+# Production build (will be created during Docker build)
+build
+
+# Environment files
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Logs and runtime data
-logs
-*.log
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Testing and coverage
-coverage
-*.lcov
-test/
-tests/
-*.test.js
-*.spec.js
-
 # IDE and editor files
-.idea
 .vscode
+.idea
 *.swp
 *.swo
 *~
@@ -45,34 +33,30 @@ tests/
 ehthumbs.db
 Thumbs.db
 
-# Version control
+# Git
 .git
 .gitignore
-
-# Build artifacts and logs
-build-log.txt
-docker-build.log
-docker-compose.log
-
-# Temporary and debug files
-tmp/
-temp/
-debug-*
-test-*
-fix-*
-
-# Multiple Docker configurations (use only main Dockerfile)
-Dockerfile.*
-docker-compose*
-.dockerignore
-
-# Documentation
+README*.md
 *.md
-!README.md
 
-# Development scripts
-setup-*
-vercel-*
+# Testing
+coverage
+.nyc_output
 
-# Production build (will be built fresh)
-build 
+# Misc
+*.tgz
+*.tar.gz
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs
+*.log
+
+# Temporary files
+tmp
+temp 

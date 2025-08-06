@@ -10,7 +10,7 @@ RUN apk add --no-cache \
     g++ \
     dumb-init
 
-# Set working directory
+# Set working directory FIRST
 WORKDIR /app
 
 # Create non-root user for security
@@ -29,14 +29,22 @@ ENV NODE_ENV=production \
     LOG_LEVEL=info
 
 # Copy package files first for better caching
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
 # Install dependencies with compatibility flags
 RUN npm ci --legacy-peer-deps --no-audit --prefer-offline && \
     npm cache clean --force
 
-# Copy source code
-COPY . .
+# Copy source files explicitly to prevent directory read errors
+COPY src/ ./src/
+COPY public/ ./public/
+COPY server.js server-simple.js server-enhanced.js ./
+COPY services/ ./services/
+COPY routes/ ./routes/
+COPY models/ ./models/
+COPY controllers/ ./controllers/
+COPY middleware/ ./middleware/
+COPY config/ ./config/
 
 # Remove conflicting files and build React app
 RUN rm -f .env.local .env.development.local .env.test.local && \
@@ -59,5 +67,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Use dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application
+# Start the application with full AI server
 CMD ["node", "server.js"] 

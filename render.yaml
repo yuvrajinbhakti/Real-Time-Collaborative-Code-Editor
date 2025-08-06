@@ -1,12 +1,12 @@
 services:
   - type: web
     name: realtime-code-editor
-    runtime: node
+    runtime: docker
     plan: starter
     region: oregon
     branch: main
-    buildCommand: npm ci --legacy-peer-deps && npm run build:render
-    startCommand: node server.js
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
     healthCheckPath: /health
     autoDeploy: true
     env:
