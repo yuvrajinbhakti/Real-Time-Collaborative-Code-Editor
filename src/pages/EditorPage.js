@@ -39,6 +39,47 @@ const EditorPage = () => {
         setShowAIResults(true);
     };
 
+    // Download code function
+    const downloadCode = () => {
+        if (!codeRef.current || codeRef.current.trim().length === 0) {
+            toast.error('No code to download');
+            return;
+        }
+
+        const element = document.createElement('a');
+        const file = new Blob([codeRef.current], { type: 'text/plain' });
+        element.href = URL.createObjectURL(file);
+        element.download = `code-${roomId}-${new Date().toISOString().split('T')[0]}.${getFileExtension(currentLanguage)}`;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        toast.success('Code downloaded successfully!');
+    };
+
+    // Get file extension based on language
+    const getFileExtension = (language) => {
+        const extensions = {
+            'javascript': 'js',
+            'typescript': 'ts',
+            'python': 'py',
+            'java': 'java',
+            'cpp': 'cpp',
+            'c': 'c',
+            'html': 'html',
+            'css': 'css',
+            'json': 'json',
+            'xml': 'xml',
+            'sql': 'sql',
+            'php': 'php',
+            'ruby': 'rb',
+            'go': 'go',
+            'rust': 'rs',
+            'swift': 'swift',
+            'kotlin': 'kt'
+        };
+        return extensions[language] || 'txt';
+    };
+
     useEffect(() => {
         const init = async () => {
             try {
@@ -197,6 +238,21 @@ const EditorPage = () => {
                     }}
                 >
                     🤖 AI REVIEW CODE ✨
+                </button>
+                <button 
+                    className="btn downloadBtn" 
+                    onClick={downloadCode}
+                    style={{ 
+                        background: 'linear-gradient(45deg, #28a745, #20c997)',
+                        color: 'white',
+                        marginBottom: '10px',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        border: '2px solid #fff',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                    }}
+                >
+                    📥 DOWNLOAD CODE
                 </button>
                 <button className="btn leaveBtn" onClick={leaveRoom}>
                     Leave
