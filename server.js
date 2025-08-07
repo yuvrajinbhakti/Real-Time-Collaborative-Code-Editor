@@ -8,7 +8,6 @@ const ACTIONS = require('./src/Actions');
 // Import AI and enhanced services (with fallbacks)
 let aiCodeReviewService;
 let logger = console; // Fallback to console if logger service not available
-let monitoring;
 
 try {
   aiCodeReviewService = require('./services/aiCodeReview');
@@ -29,22 +28,6 @@ try {
   console.log('⚠️ Logger service not available, using console');
 }
 
-try {
-  monitoring = require('./services/monitoring');
-  console.log('✅ Monitoring service loaded');
-} catch (error) {
-  console.log('⚠️ Monitoring service not available');
-  // Create mock monitoring service
-  monitoring = {
-    start: () => {},
-    recordRequest: () => {},
-    recordAIRequest: () => {},
-    recordError: () => {},
-    updateActiveConnections: () => {},
-    getMetrics: () => ({ status: 'unknown' })
-  };
-}
-
 // In-memory storage for collaborative reviews (directly in server.js)
 const collaborativeReviews = new Map(); // reviewId -> review object
 const roomReviews = new Map();          // roomId -> array of reviewIds
@@ -61,15 +44,7 @@ function generateCommentId() {
 
 // Initialize services
 console.log('🤖 Initializing AI Code Review service...');
-try {
-  aiCodeReviewService.initialize();
-  console.log('✅ AI Code Review service initialized successfully');
-} catch (error) {
-  console.error('❌ Failed to initialize AI service:', error.message);
-}
-
-console.log('📊 Starting monitoring service...');
-monitoring.start();
+aiCodeReviewService.initialize();
 
 // Setup periodic cleanup for AI Code Review service (every hour)
 setInterval(() => {
@@ -144,7 +119,6 @@ app.get('/health', (req, res) => {
 
 app.get('/health/detailed', (req, res) => {
   const memUsage = process.memoryUsage();
-  const systemMetrics = monitoring.getMetrics();
   
   res.json({
     status: 'healthy',
@@ -160,12 +134,6 @@ app.get('/health/detailed', (req, res) => {
     environment: process.env.NODE_ENV || 'production',
     nodeVersion: process.version,
     platform: process.platform,
-    performance: {
-      uptime: systemMetrics.uptime,
-      requests: systemMetrics.requests,
-      activeConnections: systemMetrics.activeConnections,
-      systemHealth: systemMetrics.status
-    },
     features: {
       aiCodeReview: aiCodeReviewService.getMetrics().isEnabled,
       collaborativeReviews: collaborativeReviews.size,
@@ -177,10 +145,7 @@ app.get('/health/detailed', (req, res) => {
 
 // API routes
 app.get('/api/status', (req, res) => {
-  monitoring.recordRequest();
   const aiMetrics = aiCodeReviewService.getMetrics();
-  const systemMetrics = monitoring.getMetrics();
-  
   res.json({ 
     status: 'online', 
     mode: process.env.NODE_ENV || 'production', 
@@ -193,13 +158,6 @@ app.get('/api/status', (req, res) => {
       collaborativeReviews: collaborativeReviews.size,
       activeRooms: roomReviews.size,
       totalComments: Array.from(reviewComments.values()).reduce((sum, comments) => sum + comments.length, 0)
-    },
-    performance: {
-      uptime: systemMetrics.uptime,
-      requests: systemMetrics.requests,
-      activeConnections: systemMetrics.activeConnections,
-      systemHealth: systemMetrics.status,
-      alerts: monitoring.getAlerts()
     }
   });
 });
@@ -544,37 +502,9 @@ app.post('/api/ai-review/analyze', async (req, res) => {
 // Serve static files from build directory
 app.use(express.static(path.join(__dirname, 'build')));
 
-// Debug endpoint to check build directory
-app.get('/debug/build', (req, res) => {
-  const fs = require('fs');
-  const buildPath = path.join(__dirname, 'build');
-  const indexPath = path.join(buildPath, 'index.html');
-  
-  res.json({
-    buildDirExists: fs.existsSync(buildPath),
-    indexHtmlExists: fs.existsSync(indexPath),
-    buildContents: fs.existsSync(buildPath) ? fs.readdirSync(buildPath) : 'N/A',
-    buildPath: buildPath,
-    workingDir: __dirname
-  });
-});
-
 // Catch all handler for React Router
 app.get('*', (req, res) => {
-  const indexPath = path.join(__dirname, 'build', 'index.html');
-  const fs = require('fs');
-  
-  // Check if build directory exists
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    // Fallback: serve a simple redirect to build the app
-    res.status(503).send(`
-      <h1>Building Application...</h1>
-      <p>The React build is not ready yet. Please wait a moment and refresh.</p>
-      <script>setTimeout(() => window.location.reload(), 10000);</script>
-    `);
-  }
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 const userSocketMap = {};
