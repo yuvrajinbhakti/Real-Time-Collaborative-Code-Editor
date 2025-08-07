@@ -1,10 +1,12 @@
 services:
   - type: web
     name: realtime-code-editor
-    runtime: docker
+    runtime: node
     plan: starter
     region: oregon
-    branch: main
+    branch: master
+    buildCommand: npm ci --legacy-peer-deps && npm run build:react
+    startCommand: npm run start:ai
     healthCheckPath: /health
     autoDeploy: true
     env:
@@ -55,13 +57,12 @@ services:
         - middleware/**
         - models/**
         - build/**
-        - Dockerfile.render
       ignoredPaths:
         - "*.md"
         - "test*"
         - "debug*"
         - "fix*"
-        - "Dockerfile"
+        - "Dockerfile*"
         - docker-compose*
         - logs/**
         - node_modules/**
