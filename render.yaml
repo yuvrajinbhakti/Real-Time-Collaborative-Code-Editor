@@ -5,8 +5,6 @@ services:
     plan: starter
     region: oregon
     branch: main
-    dockerfilePath: ./Dockerfile.render
-    dockerContext: .
     healthCheckPath: /health
     autoDeploy: true
     env:
