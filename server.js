@@ -107,6 +107,42 @@ const io = new Server(server, {
   }
 });
 
+// Health check endpoints (required for Render deployment)
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: require('./package.json').version
+  });
+});
+
+app.get('/health/detailed', (req, res) => {
+  const memUsage = process.memoryUsage();
+  
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: require('./package.json').version,
+    memory: {
+      rss: Math.round(memUsage.rss / 1024 / 1024) + ' MB',
+      heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024) + ' MB',
+      heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024) + ' MB',
+      external: Math.round(memUsage.external / 1024 / 1024) + ' MB'
+    },
+    environment: process.env.NODE_ENV || 'production',
+    nodeVersion: process.version,
+    platform: process.platform,
+    features: {
+      aiCodeReview: aiCodeReviewService.getMetrics().isEnabled,
+      collaborativeReviews: collaborativeReviews.size,
+      activeRooms: roomReviews.size,
+      realTimeCollaboration: true
+    }
+  });
+});
+
 // API routes
 app.get('/api/status', (req, res) => {
   const aiMetrics = aiCodeReviewService.getMetrics();
@@ -114,7 +150,7 @@ app.get('/api/status', (req, res) => {
     status: 'online', 
     mode: process.env.NODE_ENV || 'production', 
     timestamp: new Date().toISOString(),
-    platform: 'Railway',
+    platform: 'Render',
     features: {
       aiCodeReview: aiMetrics.isEnabled,
       aiProvider: aiMetrics.provider || 'none',
