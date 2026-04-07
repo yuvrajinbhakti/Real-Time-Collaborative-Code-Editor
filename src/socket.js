@@ -8,8 +8,9 @@ export const initSocket = async () => {
         transports: ['websocket', 'polling']
     };
     
-    console.log('🔗 Connecting to Socket.IO server...');
-    const socket = io(options);
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+    console.log(`🔗 Connecting to Socket.IO server at ${backendUrl}...`);
+    const socket = io(backendUrl, options);
     
     socket.on('connect', () => {
         console.log('✅ Socket connected successfully:', socket.id);
