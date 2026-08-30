@@ -303,6 +303,9 @@ function stats() {
     history: it.server.history.length,
     sockets: it.sockets.size,
     persisted: store.enabled,
+    // For the metrics gauge. Byte length rather than code points, because the
+    // question it answers is how much memory the room is holding.
+    documentBytes: Buffer.byteLength(it.server.document, 'utf8'),
   }));
 }
 

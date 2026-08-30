@@ -5,6 +5,8 @@ const path = require('path');
 const { Server } = require('socket.io');
 const ACTIONS = require('./src/Actions');
 const otRooms = require('./ot-rooms');
+const metrics = require('./services/metrics');
+metrics.init();
 
 /**
  * Connect Redis if it is configured, and return it — or null.
@@ -146,6 +148,27 @@ app.get('/health', (req, res) => {
     uptime: process.uptime(),
     version: require('./package.json').version
   });
+});
+
+/**
+ * The endpoint prometheus.yml scrapes. It has been in that config, and in the
+ * load test, since long before anything served it.
+ */
+app.get('/metrics', async (req, res) => {
+  if (!metrics.enabled()) {
+    // Said plainly rather than returning an empty 200, which a scraper cannot
+    // tell from an application that simply has nothing to report.
+    return res.status(503).type('text/plain').send('# metrics unavailable: prom-client failed to load\n');
+  }
+  // Derived gauges are refreshed here rather than on every keystroke — and,
+  // for the socket count, rather than on connect and disconnect. Engine.IO has
+  // not decremented `clientsCount` yet when the `disconnect` event fires, so a
+  // gauge maintained from those events climbs and never comes back down. Read
+  // at scrape time it is simply correct.
+  metrics.setSockets(io.engine.clientsCount);
+  metrics.observeRooms(otRooms.stats());
+  res.set('Content-Type', metrics.contentType());
+  return res.send(await metrics.text());
 });
 
 app.get('/health/detailed', (req, res) => {
@@ -558,6 +581,7 @@ function getAllConnectedClients(roomId) {
 io.on('connection', (socket) => {
     console.log('🚀 Socket connected:', socket.id);
 
+
     socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
         console.log(`👤 ${username} joining room ${roomId}`);
         userSocketMap[socket.id] = username;
@@ -594,7 +618,18 @@ io.on('connection', (socket) => {
     });
 
     socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {
+        const startedAt = process.hrtime.bigint();
         const result = otRooms.operation(roomId, socket.id, message);
+        const seconds = Number(process.hrtime.bigint() - startedAt) / 1e9;
+
+        // Three outcomes worth telling apart: applied, rejected (the client is
+        // too far behind to rebase), and a duplicate resend that changed
+        // nothing. A rising rejection rate is the signal that the retention
+        // window is too small.
+        metrics.recordOperation(
+            result.error ? 'rejected' : result.broadcast ? 'applied' : 'duplicate',
+            seconds
+        );
 
         if (result.error) {
             socket.emit(ACTIONS.OT_ERROR, { reason: result.error });
