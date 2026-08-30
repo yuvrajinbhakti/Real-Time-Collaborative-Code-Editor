@@ -1,0 +1,49 @@
+/**
+ * Sidebar additions for the editor page.
+ *
+ * A separate file that EditorPage imports, because src/pages/superset.css — the
+ * obvious place to put this — is not imported by anything. Styles added there
+ * silently do nothing, which is how the first version of this shipped looking
+ * unstyled.
+ */
+
+/* People who have used this room before but are not here now. Only rendered
+   when the server has a store behind it; without one there is nothing to show
+   and the whole block is absent rather than an empty heading. */
+.recentList {
+    margin-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 14px;
+}
+
+.recentList h3 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.45;
+    margin-bottom: 10px;
+}
+
+.recentUser {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 13px;
+    padding: 4px 0;
+    opacity: 0.8;
+}
+
+.recentName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recentWhen {
+    font-size: 11px;
+    opacity: 0.55;
+    white-space: nowrap;
+    flex: none;
+}

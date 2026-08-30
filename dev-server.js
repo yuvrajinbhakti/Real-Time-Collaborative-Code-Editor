@@ -65,8 +65,12 @@ io.on('connection', (socket) => {
   // listens for it mounts after the socket connects, so the broadcast
   // could arrive before anything was listening and the editor stayed
   // empty. Asking is not subject to that ordering.
-  socket.on(ACTIONS.SYNC, ({ roomId }) => {
-    socket.emit(ACTIONS.INIT, otRooms.join(roomId, socket.id));
+  socket.on(ACTIONS.SYNC, async ({ roomId }) => {
+    // Awaited because a cold room is read back from the store first.
+    // Only this path awaits; operations stay synchronous so nothing can
+    // interleave in the ordering.
+    const opening = await otRooms.join(roomId, socket.id, userSocketMap[socket.id]);
+    socket.emit(ACTIONS.INIT, opening);
   });
 
   socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {

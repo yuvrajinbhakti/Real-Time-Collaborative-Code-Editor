@@ -48,8 +48,10 @@
  */
 let Server = null;
 let loading = null;
+const store = require('./ot-store');
 
-function init() {
+function init(redisService = null) {
+  store.use(redisService);
   if (!loading) loading = import('ot-core/server').then((m) => { Server = m.Server; });
   return loading;
 }
@@ -77,23 +79,81 @@ const STARTER = [
   '',
 ].join('\n');
 
-function room(roomId) {
+/**
+ * Rooms currently being loaded from the store.
+ *
+ * Two people opening a cold room at the same moment would otherwise each read
+ * from Redis, each build a `Server`, and the second would replace the first —
+ * along with anything the first had already applied. Sharing the promise means
+ * the room is constructed exactly once and both callers get the same one.
+ * @type {Map<string, Promise<object>>}
+ */
+const opening = new Map();
+
+/**
+ * The room, loaded from the store if this process has not seen it before.
+ *
+ * Async, which `operation` and `cursor` are not — deliberately. They can only be
+ * reached by a client that has already been sent the document, which means the
+ * room is in memory by then, so they use `existing()` and stay synchronous. The
+ * server's whole job is to put operations in an order, and an `await` in that
+ * path is an invitation to interleave two of them.
+ */
+async function ensure(roomId) {
+  const already = rooms.get(roomId);
+  if (already) return already;
+
+  const inFlight = opening.get(roomId);
+  if (inFlight) return inFlight;
+
+  const promise = (async () => {
+    const saved = await store.load(roomId);
+    const it = {
+      server: new Server(
+        saved ? { document: saved.document, revision: saved.revision } : { document: STARTER }
+      ),
+      sockets: new Set(),
+      cursors: new Map(),
+      dirty: false,
+      saveTimer: null,
+    };
+    // Re-check: an await happened, and a concurrent caller may have won.
+    const raced = rooms.get(roomId);
+    if (raced) return raced;
+    rooms.set(roomId, it);
+    if (saved) {
+      console.log(`[ot] room ${roomId} restored at revision ${saved.revision}`);
+    }
+    return it;
+  })();
+
+  opening.set(roomId, promise);
+  try {
+    return await promise;
+  } finally {
+    opening.delete(roomId);
+  }
+}
+
+/** The room, which must already be in memory. */
+function existing(roomId) {
+  const it = rooms.get(roomId);
+  if (!it) {
+    // Reachable only if a client sends an operation before it has been given a
+    // document, which the client cannot do — it has no revision to write
+    // against until then.
+    throw new Error(`ot-rooms: room ${roomId} is not loaded`);
+  }
+  return it;
+}
+
+function requireServer() {
   if (Server === null) {
     // Only reachable if a server opened its port without awaiting init(). Loud,
     // because the quiet version is a room that silently accepts edits and
     // cannot order them.
     throw new Error('ot-rooms: init() must be awaited before the port is opened');
   }
-  let existing = rooms.get(roomId);
-  if (!existing) {
-    existing = {
-      server: new Server({ document: STARTER }),
-      sockets: new Set(),
-      cursors: new Map(),
-    };
-    rooms.set(roomId, existing);
-  }
-  return existing;
 }
 
 /**
@@ -103,13 +163,25 @@ function room(roomId) {
  * the point: there is now one authoritative answer to "what does this file say",
  * and a joiner gets it without a peer having to be awake and willing to send it.
  */
-function join(roomId, socketId) {
-  const it = room(roomId);
+async function join(roomId, socketId, username) {
+  requireServer();
+  const it = await ensure(roomId);
   it.sockets.add(socketId);
+
+  // Who has used this room, keyed by name so returning updates rather than
+  // duplicates. The version of this idea in the other repository inserted into
+  // Mongo under a unique index on username, so the second visit by anyone threw
+  // a duplicate-key error that was caught and logged — a write-only record that
+  // failed for exactly the people it was most interesting about. A hash cannot
+  // have that bug, and this one is read back below.
+  const recent = await store.participants(roomId);
+  if (username) store.recordParticipant(roomId, username);
+
   const { document, revision } = it.server.snapshot();
   return {
     document,
     revision,
+    recent,
     cursors: [...it.cursors.entries()]
       .filter(([id]) => id !== socketId)
       .map(([id, cursor]) => ({ socketId: id, ...cursor })),
@@ -125,7 +197,7 @@ function join(roomId, socketId) {
  *   first, then `ack` to the author.
  */
 function operation(roomId, socketId, message) {
-  const it = room(roomId);
+  const it = existing(roomId);
   try {
     const { ack, broadcast } = it.server.receive(socketId, message);
 
@@ -136,6 +208,12 @@ function operation(roomId, socketId, message) {
     if (it.server.history.length > RETAIN) {
       it.server.compact(it.server.revision - RETAIN);
     }
+
+    // Only schedule a save when something actually changed. A duplicate resend
+    // or an edit cancelled by a concurrent delete produces no broadcast and no
+    // new revision, and saving on those would turn an idle room full of
+    // reconnecting clients into a steady write load.
+    if (broadcast) scheduleSave(roomId, it);
 
     return { ack, broadcast };
   } catch (error) {
@@ -153,7 +231,7 @@ function operation(roomId, socketId, message) {
  * high-frequency and safe to lose, and operations are none of those things.
  */
 function cursor(roomId, socketId, { selection, revision, username }) {
-  const it = room(roomId);
+  const it = existing(roomId);
   it.cursors.set(socketId, { selection, revision, username });
 }
 
@@ -171,7 +249,45 @@ function leave(roomId, socketId) {
   it.sockets.delete(socketId);
   it.cursors.delete(socketId);
   it.server.forget(socketId);
-  if (it.sockets.size === 0) rooms.delete(roomId);
+
+  if (it.sockets.size === 0) {
+    // Last one out saves the document, then the room leaves memory. Without a
+    // store this is the same lifetime as before — the text goes when the room
+    // does — which is why the save is awaited nowhere and its failure is not an
+    // error: persistence is a bonus, not a precondition for having been able to
+    // edit.
+    flushSave(roomId, it);
+    if (it.saveTimer) clearTimeout(it.saveTimer);
+    rooms.delete(roomId);
+  }
+}
+
+/**
+ * How long to wait before writing a changed room.
+ *
+ * Every keystroke is a revision, so saving on each one would write hundreds of
+ * times a minute for one person typing. Coalescing to a couple of seconds turns
+ * that into a handful of writes and costs at most a couple of seconds of work if
+ * the process dies — against a baseline where a restart lost everything.
+ */
+const SAVE_DEBOUNCE_MS = 2000;
+
+function scheduleSave(roomId, it) {
+  if (!store.enabled || it.saveTimer) return;
+  it.saveTimer = setTimeout(() => {
+    it.saveTimer = null;
+    flushSave(roomId, it);
+  }, SAVE_DEBOUNCE_MS);
+  // Do not hold the process open for a pending save. On a shutdown the room is
+  // flushed by `leave` or lost, and either is better than a server that will not
+  // exit.
+  it.saveTimer.unref?.();
+}
+
+function flushSave(roomId, it) {
+  if (!store.enabled) return;
+  const { document, revision } = it.server.snapshot();
+  store.save(roomId, { document, revision });
 }
 
 /** The current text, for the features that want a document rather than edits. */
@@ -186,6 +302,7 @@ function stats() {
     revision: it.server.revision,
     history: it.server.history.length,
     sockets: it.sockets.size,
+    persisted: store.enabled,
   }));
 }
 

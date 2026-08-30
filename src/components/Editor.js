@@ -35,7 +35,7 @@ function colourFor(id) {
     return `hsl(${Math.abs(hash) % 360} 85% 62%)`;
 }
 
-const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange }) => {
+const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange, onRecent }) => {
     const editorRef = useRef(null);
     const clientRef = useRef(null);
     const presenceRef = useRef(null);
@@ -112,7 +112,7 @@ const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange }) => {
             }
         };
 
-        const onInit = ({ document: text, revision, cursors }) => {
+        const onInit = ({ document: text, revision, cursors, recent }) => {
             if (started || cancelled) return;
             started = true;
 
@@ -152,6 +152,8 @@ const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange }) => {
             }
 
             handleCodeChange(text);
+            // Only present when the server has a store behind it.
+            if (recent?.length) onRecent?.(recent);
         };
 
         const onOperation = (message) => {
@@ -220,7 +222,7 @@ const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange }) => {
             clientRef.current = null;
             presenceRef.current = null;
         };
-    }, [socketProp, socketRef, roomId, handleCodeChange]);
+    }, [socketProp, socketRef, roomId, handleCodeChange, onRecent]);
 
     return <textarea id="realtimeEditor"></textarea>;
 };

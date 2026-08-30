@@ -6,6 +6,36 @@ const { Server } = require('socket.io');
 const ACTIONS = require('./src/Actions');
 const otRooms = require('./ot-rooms');
 
+/**
+ * Connect Redis if it is configured, and return it — or null.
+ *
+ * "Configured" means an explicit REDIS_URL or REDIS_HOST. Without one the
+ * defaults point at localhost, and trying that on a host with no Redis produces
+ * a connection error on every boot for a feature nobody asked for. That is the
+ * shape of the MongoDB failure in the other repository: a hard-coded
+ * 127.0.0.1 that could never work in production and logged a stack trace at
+ * every start.
+ */
+async function connectStore() {
+  if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
+    console.log('💾 Document persistence: off (set REDIS_URL or REDIS_HOST to enable)');
+    return null;
+  }
+  try {
+    const redisService = require('./services/redis');
+    const connected = await redisService.connect();
+    if (!connected) {
+      console.log('💾 Document persistence: off (Redis did not connect)');
+      return null;
+    }
+    console.log('💾 Document persistence: on');
+    return redisService;
+  } catch (error) {
+    console.log(`💾 Document persistence: off (${error.message})`);
+    return null;
+  }
+}
+
 // Import AI and enhanced services (with fallbacks)
 let aiCodeReviewService;
 let logger = console; // Fallback to console if logger service not available
@@ -555,8 +585,12 @@ io.on('connection', (socket) => {
     // listens for it mounts after the socket connects, so the broadcast
     // could arrive before anything was listening and the editor stayed
     // empty. Asking is not subject to that ordering.
-    socket.on(ACTIONS.SYNC, ({ roomId }) => {
-      socket.emit(ACTIONS.INIT, otRooms.join(roomId, socket.id));
+    socket.on(ACTIONS.SYNC, async ({ roomId }) => {
+      // Awaited because a cold room is read back from the store first.
+      // Only this path awaits; operations stay synchronous so nothing can
+      // interleave in the ordering.
+      const opening = await otRooms.join(roomId, socket.id, userSocketMap[socket.id]);
+      socket.emit(ACTIONS.INIT, opening);
     });
 
     socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {
@@ -610,8 +644,12 @@ const PORT = process.env.PORT || 5000;
 // loaded asynchronously. The port opens only once it has, because a room
 // that accepts edits before it can order them is worse than one that is
 // briefly unavailable.
-otRooms
-  .init()
+// Redis is optional. If it is not configured — which is the case on the current
+// deployment — persistence stays off and everything else works exactly as
+// before. A store that cannot be reached must never be the reason two people
+// cannot type.
+connectStore()
+  .then((redisStore) => otRooms.init(redisStore))
   .then(() => {
   server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`);

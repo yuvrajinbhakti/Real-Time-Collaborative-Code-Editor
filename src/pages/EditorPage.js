@@ -1,4 +1,5 @@
 //this is the editor page
+import './EditorPage.css';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import ACTIONS from '../Actions';
@@ -19,6 +20,8 @@ const EditorPage = () => {
     // A ref cannot wake a component up. `initSocket` is awaited, so the editor
     // renders first with nothing to bind to; this is what tells it to try again.
     const [socket, setSocket] = useState(null);
+    // Everyone who has used this room before, when the server has a store.
+    const [recent, setRecent] = useState([]);
     const location = useLocation();
     const { roomId } = useParams();
     const reactNavigator = useNavigate();
@@ -235,6 +238,28 @@ const EditorPage = () => {
                             />
                         ))}
                     </div>
+                    {/* Only rendered when the server persists rooms, and only
+                        for people who are not already in the list above. A
+                        record nothing displays is the bug this replaces. */}
+                    {recent.filter(
+                        (r) => !clients.some((c) => c.username === r.username)
+                    ).length > 0 && (
+                        <div className="recentList">
+                            <h3>Been here before</h3>
+                            {recent
+                                .filter((r) => !clients.some((c) => c.username === r.username))
+                                .map((r) => (
+                                    <div className="recentUser" key={r.username}>
+                                        <span className="recentName">{r.username}</span>
+                                        <span className="recentWhen">
+                                            {r.lastSeen
+                                                ? new Date(r.lastSeen).toLocaleDateString()
+                                                : ''}
+                                        </span>
+                                    </div>
+                                ))}
+                        </div>
+                    )}
                 </div>
                 <button className="btn copyBtn" onClick={copyRoomId}>
                     Copy ROOM ID
@@ -276,6 +301,7 @@ const EditorPage = () => {
             </div>
             <div className="editorWrap">
                 <Editor
+                    onRecent={setRecent}
                     socket={socket}
                     socketRef={socketRef}
                     roomId={roomId}
