@@ -24,7 +24,10 @@ const EditorPage = () => {
     const reactNavigator = useNavigate();
     const [clients, setClients] = useState([]);
     const [showAIResults, setShowAIResults] = useState(false);
-    const [currentLanguage, setCurrentLanguage] = useState('javascript');
+    // Read-only: the language is fixed at mount and nothing changes it, so the
+    // setter was dead weight — and an unused binding fails the build on any CI
+    // that treats warnings as errors, which Render does by default.
+    const [currentLanguage] = useState('javascript');
 
     // Memoize the code change handler
     const handleCodeChange = useCallback((code) => {

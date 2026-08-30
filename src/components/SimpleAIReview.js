@@ -6,10 +6,17 @@ const SimpleAIReview = ({ roomId, currentCode, language = 'javascript', onClose 
     const [loading, setLoading] = useState(false);
 
     // Auto-trigger review when component mounts - your better UX!
+    //
+    // Mount-only on purpose, and the empty dependency array is the honest way to
+    // say so. Adding `currentCode` — which is what the lint rule asks for —
+    // would fire a fresh AI review on every keystroke in the editor.
     useEffect(() => {
         if (currentCode && currentCode.trim().length > 0) {
             reviewCode();
         }
+        // The rule reports on the dependency array, so the exemption belongs here
+        // rather than above the hook.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Simple: Direct API call → Show results
