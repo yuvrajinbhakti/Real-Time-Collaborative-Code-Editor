@@ -16,6 +16,9 @@ import {
 const EditorPage = () => {
     const socketRef = useRef(null);
     const codeRef = useRef(null);
+    // A ref cannot wake a component up. `initSocket` is awaited, so the editor
+    // renders first with nothing to bind to; this is what tells it to try again.
+    const [socket, setSocket] = useState(null);
     const location = useLocation();
     const { roomId } = useParams();
     const reactNavigator = useNavigate();
@@ -84,6 +87,7 @@ const EditorPage = () => {
         const init = async () => {
             try {
                 socketRef.current = await initSocket();
+                setSocket(socketRef.current);
                 
                 socketRef.current.on('connect_error', (err) => {
                     console.error('Socket connection error:', err);
@@ -126,10 +130,10 @@ const EditorPage = () => {
                             console.log(`${username} joined`);
                         }
                         setClients(clients);
-                        socketRef.current.emit(ACTIONS.SYNC_CODE, {
-                            code: codeRef.current,
-                            socketId,
-                        });
+                        // The joiner no longer needs our copy of the document.
+                        // The server holds it and sends it on JOIN, so the first
+                        // client in a room has stopped being the accidental
+                        // source of truth for everybody after it.
                     }
                 );
 
@@ -260,6 +264,7 @@ const EditorPage = () => {
             </div>
             <div className="editorWrap">
                 <Editor
+                    socket={socket}
                     socketRef={socketRef}
                     roomId={roomId}
                     onCodeChange={handleCodeChange}

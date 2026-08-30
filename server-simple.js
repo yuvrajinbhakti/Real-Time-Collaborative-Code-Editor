@@ -4,6 +4,7 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 const ACTIONS = require('./src/Actions');
+const otRooms = require('./ot-rooms');
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -111,15 +112,45 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
-    socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+  // Operations, not documents. See ot-rooms.js — this used to
+  // rebroadcast the whole file, so concurrent edits overwrote each
+  // other instead of merging.
+  // The editor asks for the document when it is ready to receive it.
+  // Emitting it on JOIN alone raced the client: the React component that
+  // listens for it mounts after the socket connects, so the broadcast
+  // could arrive before anything was listening and the editor stayed
+  // empty. Asking is not subject to that ordering.
+  socket.on(ACTIONS.SYNC, ({ roomId }) => {
+    socket.emit(ACTIONS.INIT, otRooms.join(roomId, socket.id));
   });
 
-  socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
-    io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
+  socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {
+    const result = otRooms.operation(roomId, socket.id, message);
+    if (result.error) {
+      socket.emit(ACTIONS.OT_ERROR, { reason: result.error });
+      return;
+    }
+    // Broadcast before acknowledging; the other order loses one
+    // operation per collision.
+    if (result.broadcast) {
+      socket.in(roomId).emit(ACTIONS.OPERATION, result.broadcast);
+    }
+    socket.emit(ACTIONS.ACK, result.ack);
+  });
+
+  socket.on(ACTIONS.CURSOR, ({ roomId, selection, revision }) => {
+    const username = userSocketMap[socket.id];
+    otRooms.cursor(roomId, socket.id, { selection, revision, username });
+    socket.in(roomId).emit(ACTIONS.CURSOR, {
+      socketId: socket.id,
+      selection,
+      revision,
+      username,
+    });
   });
 
   socket.on('disconnecting', () => {
+    for (const id of socket.rooms) otRooms.leave(id, socket.id);
     const rooms = [...socket.rooms];
     rooms.forEach((roomId) => {
       socket.in(roomId).emit(ACTIONS.DISCONNECTED, {
@@ -156,12 +187,23 @@ process.on('SIGTERM', () => {
 // Start server
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Socket.IO server ready for connections`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ Simple mode - real-time collaboration enabled`);
-  console.log(`💚 Health checks available at /health`);
-});
+// ot-core is an ES module and this file is CommonJS on Node 18, so it is loaded
+// asynchronously. The port opens only once it has: a room that accepts edits
+// before it can order them is worse than one that is briefly unavailable.
+otRooms
+  .init()
+  .then(() => {
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📡 Socket.IO server ready for connections`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`✅ Simple mode - real-time collaboration enabled`);
+      console.log(`💚 Health checks available at /health`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to load ot-core; refusing to start:', error);
+    process.exit(1);
+  });
 
 module.exports = app; 

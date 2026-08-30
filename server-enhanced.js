@@ -10,6 +10,7 @@ const debounce = require('lodash.debounce');
 // Import services with fallbacks
 let config, logger, redisService, healthCheck, messageQueue, otService, aiCodeReviewService;
 const ACTIONS = require('./src/Actions');
+const otRooms = require('./ot-rooms');
 
 // Safe service imports with fallbacks
 try {
@@ -308,15 +309,45 @@ class EnhancedServer {
         });
       });
 
-      socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
-        socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+      // Operations, not documents. See ot-rooms.js — this used to
+      // rebroadcast the whole file, so concurrent edits overwrote each
+      // other instead of merging.
+      // The editor asks for the document when it is ready to receive it.
+      // Emitting it on JOIN alone raced the client: the React component that
+      // listens for it mounts after the socket connects, so the broadcast
+      // could arrive before anything was listening and the editor stayed
+      // empty. Asking is not subject to that ordering.
+      socket.on(ACTIONS.SYNC, ({ roomId }) => {
+        socket.emit(ACTIONS.INIT, otRooms.join(roomId, socket.id));
       });
 
-      socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
-        this.io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
+      socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {
+        const result = otRooms.operation(roomId, socket.id, message);
+        if (result.error) {
+          socket.emit(ACTIONS.OT_ERROR, { reason: result.error });
+          return;
+        }
+        // Broadcast before acknowledging; the other order loses one
+        // operation per collision.
+        if (result.broadcast) {
+          socket.in(roomId).emit(ACTIONS.OPERATION, result.broadcast);
+        }
+        socket.emit(ACTIONS.ACK, result.ack);
+      });
+
+      socket.on(ACTIONS.CURSOR, ({ roomId, selection, revision }) => {
+        const username = this.userSocketMap.get(socket.id);
+        otRooms.cursor(roomId, socket.id, { selection, revision, username });
+        socket.in(roomId).emit(ACTIONS.CURSOR, {
+          socketId: socket.id,
+          selection,
+          revision,
+          username,
+        });
       });
 
       socket.on('disconnecting', () => {
+        for (const id of socket.rooms) otRooms.leave(id, socket.id);
         const rooms = [...socket.rooms];
         rooms.forEach((roomId) => {
           this.io.to(roomId).emit(ACTIONS.DISCONNECTED, {
@@ -363,12 +394,19 @@ class EnhancedServer {
   start() {
     const PORT = config.PORT || process.env.PORT || 5000;
     
+    // See the note in ot-rooms.js: ESM loaded from CommonJS, awaited before the
+    // port opens.
+    otRooms.init().then(() => {
     this.server.listen(PORT, '0.0.0.0', () => {
       logger.info(`🚀 Enhanced server running on port ${PORT}`);
       logger.info(`📡 Socket.IO server ready for connections`);
       logger.info(`🌍 Environment: ${config.NODE_ENV || process.env.NODE_ENV || 'production'}`);
       logger.info(`🤖 AI Code Review: ${aiCodeReviewService.getMetrics().isEnabled ? 'Enabled' : 'Disabled'}`);
       logger.info(`💚 Health checks available at /health`);
+    });
+    }).catch((error) => {
+      logger.error('Failed to load ot-core; refusing to start:', error);
+      process.exit(1);
     });
   }
 }

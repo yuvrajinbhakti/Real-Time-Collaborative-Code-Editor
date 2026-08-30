@@ -4,6 +4,7 @@ const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 const ACTIONS = require('./src/Actions');
+const otRooms = require('./ot-rooms');
 
 // Import AI and enhanced services (with fallbacks)
 let aiCodeReviewService;
@@ -139,7 +140,11 @@ app.get('/health/detailed', (req, res) => {
       collaborativeReviews: collaborativeReviews.size,
       activeRooms: roomReviews.size,
       realTimeCollaboration: true
-    }
+    },
+    // Operational transform state, per room. `history` is the number of
+    // operations still rebaseable; it is the figure that decides how expensive a
+    // late operation is, so it is worth being able to see it from outside.
+    documents: otRooms.stats()
   });
 });
 
@@ -526,6 +531,14 @@ io.on('connection', (socket) => {
         console.log(`👤 ${username} joining room ${roomId}`);
         userSocketMap[socket.id] = username;
         socket.join(roomId);
+
+        // No document here. It is sent in reply to SYNC instead, because the
+        // component that renders it mounts after the socket connects — sending
+        // it on JOIN as well meant every client initialised twice, and the
+        // second initialisation replaced the document while the collaborative
+        // binding was already attached, which reported the replacement as an
+        // edit and wiped the room.
+
         const clients = getAllConnectedClients(roomId);
         clients.forEach(({ socketId }) => {
             io.to(socketId).emit(ACTIONS.JOINED, {
@@ -536,17 +549,48 @@ io.on('connection', (socket) => {
         });
     });
 
-    socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
-        socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+    // The editor asks for the document when it is ready to receive it.
+    // Emitting it on JOIN alone raced the client: the React component that
+    // listens for it mounts after the socket connects, so the broadcast
+    // could arrive before anything was listening and the editor stayed
+    // empty. Asking is not subject to that ordering.
+    socket.on(ACTIONS.SYNC, ({ roomId }) => {
+      socket.emit(ACTIONS.INIT, otRooms.join(roomId, socket.id));
     });
 
-    socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
-        io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
+    socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {
+        const result = otRooms.operation(roomId, socket.id, message);
+
+        if (result.error) {
+            socket.emit(ACTIONS.OT_ERROR, { reason: result.error });
+            return;
+        }
+
+        // Broadcast before acknowledging. Acknowledging first lets the author
+        // send its next operation against a revision the room has not finished
+        // distributing, which silently loses one operation per collision — a
+        // bug found in ot-core's own fan-out rather than predicted.
+        if (result.broadcast) {
+            socket.in(roomId).emit(ACTIONS.OPERATION, result.broadcast);
+        }
+        socket.emit(ACTIONS.ACK, result.ack);
+    });
+
+    socket.on(ACTIONS.CURSOR, ({ roomId, selection, revision }) => {
+        const username = userSocketMap[socket.id];
+        otRooms.cursor(roomId, socket.id, { selection, revision, username });
+        socket.in(roomId).emit(ACTIONS.CURSOR, {
+            socketId: socket.id,
+            selection,
+            revision,
+            username,
+        });
     });
 
     socket.on('disconnecting', () => {
         const rooms = [...socket.rooms];
         rooms.forEach((roomId) => {
+            otRooms.leave(roomId, socket.id);
             socket.in(roomId).emit(ACTIONS.DISCONNECTED, {
                 socketId: socket.id,
                 username: userSocketMap[socket.id],
@@ -559,12 +603,24 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📡 Socket.IO server ready for connections`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
-    console.log(`🤖 AI Code Review: ${aiCodeReviewService.getMetrics().isEnabled ? 'Enabled' : 'Disabled'}`);
-    console.log(`🏠 Collaborative reviews storage ready`);
-});
+// ot-core is an ES module and this file is CommonJS on Node 18, so it is
+// loaded asynchronously. The port opens only once it has, because a room
+// that accepts edits before it can order them is worse than one that is
+// briefly unavailable.
+otRooms
+  .init()
+  .then(() => {
+  server.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📡 Socket.IO server ready for connections`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
+      console.log(`🤖 AI Code Review: ${aiCodeReviewService.getMetrics().isEnabled ? 'Enabled' : 'Disabled'}`);
+      console.log(`🏠 Collaborative reviews storage ready`);
+  });
+  })
+  .catch((error) => {
+    console.error('Failed to load ot-core; refusing to start:', error);
+    process.exit(1);
+  });
 
 module.exports = app;

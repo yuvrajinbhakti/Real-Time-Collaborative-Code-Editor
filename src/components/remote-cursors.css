@@ -1,0 +1,45 @@
+/**
+ * Other people's carets.
+ *
+ * A bookmark widget sits between two characters and has no width of its own, so
+ * the caret is a left border on a zero-width inline element rather than a box.
+ * `position: relative` is only here to hang the name label off.
+ */
+
+.remote-cursor {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  border-left: 2px solid currentColor;
+  height: 1.2em;
+  vertical-align: text-bottom;
+  margin-left: -1px;
+  z-index: 5;
+}
+
+/**
+ * The name, above the caret rather than beside it, so a cursor sitting in the
+ * middle of a line does not push the text around — the widget is in the flow,
+ * and anything with width in here would shift the characters after it.
+ */
+.remote-cursor-label {
+  position: absolute;
+  bottom: 100%;
+  left: -1px;
+  padding: 1px 5px;
+  border-radius: 3px 3px 3px 0;
+  font-size: 10px;
+  line-height: 1.4;
+  font-family: system-ui, sans-serif;
+  color: #0b1021;
+  white-space: nowrap;
+  pointer-events: none;
+  /* Faded until the editor is hovered: a room with five people in it should not
+     be five permanent labels covering the code they are pointing at. */
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+
+.CodeMirror:hover .remote-cursor-label {
+  opacity: 1;
+}
