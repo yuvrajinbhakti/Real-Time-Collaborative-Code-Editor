@@ -112,6 +112,17 @@ const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange, onRecent 
             }
         };
 
+        const report = () => {
+            const client = clientRef.current;
+            if (!client) return;
+            const text = cm.getValue();
+            const selection = {
+                anchor: codePointsIn(text, cm.indexFromPos(cm.getCursor('anchor'))),
+                head: codePointsIn(text, cm.indexFromPos(cm.getCursor('head'))),
+            };
+            socket.emit(ACTIONS.CURSOR, { roomId, selection, revision: client.revision });
+        };
+
         const onInit = ({ document: text, revision, cursors, recent }) => {
             if (started || cancelled) return;
             started = true;
@@ -154,6 +165,13 @@ const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange, onRecent 
             handleCodeChange(text);
             // Only present when the server has a store behind it.
             if (recent?.length) onRecent?.(recent);
+
+            // Report where we are straight away. Reporting only on movement
+            // meant somebody who joined and sat still was invisible to everyone
+            // else until they happened to click — and, because the server hands
+            // a joiner the cursors it has stored, invisible to every later
+            // joiner too. One emit closes both.
+            report();
         };
 
         const onOperation = (message) => {
@@ -184,20 +202,10 @@ const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange, onRecent 
         socket.on(ACTIONS.DISCONNECTED, onDisconnected);
         socket.on(ACTIONS.OT_ERROR, onOtError);
 
-        // Our own cursor, reported on movement. Throttled by the browser's own
+        // Our own cursor, on every movement. Throttled by the browser's own
         // event rate rather than a timer: `cursorActivity` fires once per
         // interaction, not once per frame.
-        const onCursorActivity = () => {
-            const client = clientRef.current;
-            if (!client) return;
-            const text = cm.getValue();
-            const selection = {
-                anchor: codePointsIn(text, cm.indexFromPos(cm.getCursor('anchor'))),
-                head: codePointsIn(text, cm.indexFromPos(cm.getCursor('head'))),
-            };
-            socket.emit(ACTIONS.CURSOR, { roomId, selection, revision: client.revision });
-        };
-        cm.on('cursorActivity', onCursorActivity);
+        cm.on('cursorActivity', report);
 
         // Also report the local document upward whenever it changes, so the
         // download and AI-review features keep seeing current text.
@@ -212,7 +220,7 @@ const Editor = ({ socket: socketProp, socketRef, roomId, onCodeChange, onRecent 
             socket.off(ACTIONS.CURSOR, onCursor);
             socket.off(ACTIONS.DISCONNECTED, onDisconnected);
             socket.off(ACTIONS.OT_ERROR, onOtError);
-            cm.off('cursorActivity', onCursorActivity);
+            cm.off('cursorActivity', report);
             cm.off('changes', onLocalChange);
             detachEditor?.();
             detachPresence?.();
