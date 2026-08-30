@@ -514,14 +514,15 @@ app.get('*', (req, res) => {
 
 const userSocketMap = {};
 function getAllConnectedClients(roomId) {
-    return Array.from(io.sockets.adapter.rooms.get(roomId) || []).map(
-        (socketId) => {
-            return {
-                socketId,
-                username: userSocketMap[socketId],
-            };
-        }
-    );
+    return Array.from(io.sockets.adapter.rooms.get(roomId) || [])
+        .map((socketId) => ({ socketId, username: userSocketMap[socketId] }))
+        // A socket in the room with no username has either not finished joining
+        // or is in the middle of leaving — `disconnecting` clears the name while
+        // the socket is still a member. Either way it is not a person to draw,
+        // and drawing it is permanent: the client list is only ever pruned by a
+        // DISCONNECTED event, and one has already been sent for a socket in that
+        // state. That is where the nameless avatars came from.
+        .filter((client) => Boolean(client.username));
 }
 
 io.on('connection', (socket) => {
@@ -597,7 +598,9 @@ io.on('connection', (socket) => {
             });
         });
         delete userSocketMap[socket.id];
-        socket.leave();
+        // `socket.leave()` with no argument leaves a room called "undefined".
+        // Disconnecting removes the socket from its rooms anyway, so the call
+        // was doing nothing except looking like it did something.
     });
 });
 

@@ -87,10 +87,18 @@ const EditorPage = () => {
     };
 
     useEffect(() => {
+        let created = null;
         const init = async () => {
             try {
-                socketRef.current = await initSocket();
-                setSocket(socketRef.current);
+                const socket = await initSocket();
+                // Held locally as well as on the ref, because this function is
+                // async: under StrictMode the effect runs twice and its cleanup
+                // can fire before the ref has been assigned, leaving a live
+                // socket that nothing ever disconnects. `created` below is what
+                // the cleanup actually closes.
+                created = socket;
+                socketRef.current = socket;
+                setSocket(socket);
                 
                 socketRef.current.on('connect_error', (err) => {
                     console.error('Socket connection error:', err);
@@ -162,6 +170,7 @@ const EditorPage = () => {
         };
         init();
         return () => {
+            created?.disconnect();
             socketRef.current?.disconnect();
             socketRef.current?.off(ACTIONS.JOINED);
             socketRef.current?.off(ACTIONS.DISCONNECTED);
