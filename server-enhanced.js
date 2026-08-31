@@ -318,11 +318,20 @@ class EnhancedServer {
       // could arrive before anything was listening and the editor stayed
       // empty. Asking is not subject to that ordering.
       socket.on(ACTIONS.SYNC, async ({ roomId }) => {
-        // Awaited because a cold room is read back from the store first.
-        // Only this path awaits; operations stay synchronous so nothing can
-        // interleave in the ordering.
-        const opening = await otRooms.join(roomId, socket.id, this.userSocketMap.get(socket.id));
-        socket.emit(ACTIONS.INIT, opening);
+        // Wrapped because this handler is async: a rejection here is an
+        // unhandled promise rejection, which Node treats as fatal. One client
+        // asking for a room that cannot be loaded should not end the process
+        // for everybody else in every other room.
+        try {
+            // Awaited because a cold room is read back from the store first.
+            // Only this path awaits; operations stay synchronous so nothing can
+            // interleave in the ordering.
+            const opening = await otRooms.join(roomId, socket.id, this.userSocketMap.get(socket.id));
+            socket.emit(ACTIONS.INIT, opening);
+        } catch (error) {
+          console.error('[ot] sync failed:', error.message);
+          socket.emit(ACTIONS.OT_ERROR, { reason: 'could not open the room' });
+        }
       });
 
       socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {

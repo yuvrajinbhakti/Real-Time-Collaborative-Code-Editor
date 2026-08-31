@@ -135,16 +135,20 @@ async function ensure(roomId) {
   }
 }
 
-/** The room, which must already be in memory. */
+/**
+ * The room if it is in memory, or null.
+ *
+ * This used to throw, on the reasoning that a client cannot send an operation
+ * before it has been given a document. That is true of *this* client and
+ * irrelevant: anything can open a socket and send whatever it likes. The throw
+ * propagated out of the Socket.IO handler and killed the process, so one
+ * malformed message from one client took down every room for everybody.
+ *
+ * Returning null makes the caller decide, which is the only place that knows
+ * whether a missing room is worth an error message or a shrug.
+ */
 function existing(roomId) {
-  const it = rooms.get(roomId);
-  if (!it) {
-    // Reachable only if a client sends an operation before it has been given a
-    // document, which the client cannot do — it has no revision to write
-    // against until then.
-    throw new Error(`ot-rooms: room ${roomId} is not loaded`);
-  }
-  return it;
+  return rooms.get(roomId) ?? null;
 }
 
 function requireServer() {
@@ -198,6 +202,12 @@ async function join(roomId, socketId, username) {
  */
 function operation(roomId, socketId, message) {
   const it = existing(roomId);
+  if (!it) {
+    // An operation for a room this process has never opened. The client is out
+    // of step — it is writing against a revision nobody has — so it is told, and
+    // the server carries on.
+    return { error: `room ${roomId} has not been opened; sync first` };
+  }
   try {
     const { ack, broadcast } = it.server.receive(socketId, message);
 
@@ -232,6 +242,9 @@ function operation(roomId, socketId, message) {
  */
 function cursor(roomId, socketId, { selection, revision, username }) {
   const it = existing(roomId);
+  // Presence is best effort by construction. A cursor for a room that is not
+  // open is not worth an error, and definitely not worth an exception.
+  if (!it) return;
   it.cursors.set(socketId, { selection, revision, username });
 }
 
