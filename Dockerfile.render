@@ -35,20 +35,16 @@ COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps --no-audit --prefer-offline && \
     npm cache clean --force
 
-# Copy source files explicitly to prevent directory read errors
-COPY src/ ./src/
-COPY public/ ./public/
-# ot-rooms.js and ot-store.js are required by server.js. This COPY lists
-# files by name rather than copying the tree, so a new top-level module is
-# invisible to the image until it is named here — the container builds
-# cleanly and then dies on require() at startup.
-COPY server.js server-simple.js server-enhanced.js dev-server.js ot-rooms.js ot-store.js ./
-COPY services/ ./services/
-COPY routes/ ./routes/
-COPY models/ ./models/
-COPY controllers/ ./controllers/
-COPY middleware/ ./middleware/
-COPY config/ ./config/
+# Copy the application. Listing paths individually is what broke this image
+# twice: first a new top-level module (ot-rooms.js) was invisible because nobody
+# added it here, then `COPY controllers/` failed the build outright because that
+# directory does not exist. Both are the same mistake — a second, hand-maintained
+# inventory of the repository that silently drifts from the repository.
+#
+# .dockerignore already excludes node_modules, build, .env files, .git and logs,
+# so copying the tree is both smaller in intent and correct by default: a file
+# added to the project is in the image without anyone remembering to say so.
+COPY . .
 
 # Remove conflicting files and build React app
 RUN rm -f .env.local .env.development.local .env.test.local && \
