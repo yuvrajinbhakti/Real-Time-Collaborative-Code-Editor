@@ -38,7 +38,11 @@ RUN npm ci --legacy-peer-deps --no-audit --prefer-offline && \
 # Copy source files explicitly to prevent directory read errors
 COPY src/ ./src/
 COPY public/ ./public/
-COPY server.js server-simple.js server-enhanced.js ./
+# ot-rooms.js and ot-store.js are required by server.js. This COPY lists
+# files by name rather than copying the tree, so a new top-level module is
+# invisible to the image until it is named here — the container builds
+# cleanly and then dies on require() at startup.
+COPY server.js server-simple.js server-enhanced.js dev-server.js ot-rooms.js ot-store.js ./
 COPY services/ ./services/
 COPY routes/ ./routes/
 COPY models/ ./models/
