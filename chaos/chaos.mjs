@@ -39,6 +39,11 @@ const LATENCY_MS = Number(process.env.LATENCY_MS ?? 150);
 /** Chance per client per second of being knocked offline. */
 const DROP_RATE = Number(process.env.DROP_RATE ?? 0.06);
 const SEED = Number(process.env.SEED ?? 1);
+/**
+ * Use the catch-up route on reconnect. CATCHUP=0 forces the old snapshot path,
+ * which is how the cost of not having it was measured in the first place.
+ */
+const CATCHUP = process.env.CATCHUP !== '0';
 
 /*
  * Seeded, so a divergence can be re-run rather than described. A failure that
@@ -70,7 +75,10 @@ const stats = {
   dropped: 0,     // deliberate disconnections
   rejoined: 0,
   otErrors: 0,
-  discarded: 0,   // unconfirmed edits ot-core had to throw away
+  discarded: 0,          // unconfirmed edits ot-core had to throw away
+  caughtUp: 0,           // rejoins answered with just the missing operations
+  snapshotFallbacks: 0,  // rejoins that asked to catch up and got a snapshot
+  catchUpRejected: 0,    // catch-ups the client could not apply
 };
 
 /**
@@ -85,19 +93,18 @@ class Participant {
     this.issued = 0;
     this.socket = null;
     this.client = null;
+    this.resuming = null;
     this.online = false;
   }
 
   /*
-   * A fresh socket and a fresh ot-core Client from the server's snapshot.
+   * A fresh socket, then either a catch-up or a snapshot.
    *
-   * Deliberately not client.reconnect(missed): that needs the server to answer
-   * "what happened since revision N", and this server has no such route —
-   * ot-core's Server exposes since(), ot-rooms never calls it. The only way
-   * back in is a whole new snapshot, which means anything unconfirmed at the
-   * moment of the drop is gone. That is a real property of this system, so the
-   * harness reproduces it faithfully and counts the cost rather than papering
-   * over it with a protocol the server does not speak.
+   * CATCHUP=0 forces the snapshot path, which is what this harness measured
+   * before the server learned to answer `ot-resync`: a whole fresh document,
+   * and everything the client had in flight discarded. Keeping it switchable
+   * is what lets the run put a number on the difference rather than asserting
+   * one.
    */
   connect() {
     return new Promise((resolve, reject) => {
@@ -113,25 +120,96 @@ class Participant {
 
       socket.on('connect', () => {
         socket.emit('join', { roomId: ROOM, username: this.name });
-        socket.emit('ot-sync', { roomId: ROOM });
+
+        // A client that has been here before knows where it got to, so it asks
+        // for the difference. A first connection has nothing to catch up on.
+        if (CATCHUP && this.client) {
+          this.resuming = this.client;
+          socket.emit('ot-resync', { roomId: ROOM, revision: this.client.revision });
+        } else {
+          this.resuming = null;
+          socket.emit('ot-sync', { roomId: ROOM });
+        }
+      });
+
+      /*
+       * The catch-up landed: the same Client carries on, rebasing the
+       * operations it missed and re-sending whatever was in flight. This is
+       * the whole point — the edits it was holding survive the disconnection.
+       */
+      socket.on('ot-missed', ({ missed }) => {
+        const client = this.resuming;
+        // Not a catch-up this participant asked for. Leave the timeout armed:
+        // clearing it without settling the promise is how a reconnect hangs
+        // forever with nothing left to reject it.
+        if (!client) return;
+
+        try {
+          client.id = socket.id;
+          this.rewire(socket, client);
+          // Rebases what it missed and re-sends what was in flight. The whole
+          // point: the edits it was holding survive the disconnection.
+          client.reconnect(missed);
+        } catch (error) {
+          // A catch-up the client cannot apply — it is further out of step
+          // than the operations explain. Ask for a snapshot, which always
+          // works, and let the ot-init handler settle this promise. The
+          // timeout is still armed, so a server that answers neither fails
+          // rather than hangs.
+          stats.catchUpRejected++;
+          this.resuming = null;
+          socket.emit('ot-sync', { roomId: ROOM });
+          return;
+        }
+
+        clearTimeout(failed);
+        stats.rejoined++;
+        stats.caughtUp++;
+        this.socket = socket;
+        this.online = true;
+        resolve(this);
       });
 
       socket.on('ot-init', ({ document, revision }) => {
         clearTimeout(failed);
-        if (this.client) stats.rejoined++;
+        if (this.client) {
+          stats.rejoined++;
+          // Asked for a catch-up and was handed a snapshot instead: too far
+          // behind, or past what the room still remembers.
+          if (this.resuming) stats.snapshotFallbacks++;
+        }
 
         this.client = new Client({
           id: socket.id,
           document,
           revision,
-          // Injected one-way delay. Without it every client is on the same
-          // loopback and operations arrive in the order they were sent, which
-          // is the one case concurrency bugs hide in.
+          /*
+           * Sends through `this.socket`, not the socket captured here.
+           *
+           * A resumed client outlives the socket it was built on — that is the
+           * point of catching up — so a closure over the original would go on
+           * writing to a dead connection for the rest of the run, and every
+           * edit after the first reconnection would vanish. The indirection
+           * costs a property read and is the difference between measuring the
+           * catch-up path and measuring nothing.
+           *
+           * The delay is injected one-way latency. Without it every client is
+           * on the same loopback and operations arrive in the order they were
+           * sent, which is the one case concurrency bugs hide in.
+           */
           send: (message) => {
             const delay = randInt(LATENCY_MS);
             setTimeout(() => {
-              if (this.online && socket.connected) {
-                socket.emit('ot-op', { roomId: ROOM, message });
+              // Only the socket being gone suppresses a send, and that is a
+              // genuine loss the client already knows about — it was told to
+              // disconnect(). Suppressing on any other condition is how this
+              // harness broke itself: a message silently dropped here leaves
+              // ot-core believing it is in flight, so the client waits for an
+              // ack that cannot arrive and never leaves `awaiting`. Those are
+              // stuck clients the harness manufactured, not ones the server
+              // lost, and they fail the run for the wrong reason.
+              if (this.socket?.connected) {
+                this.socket.emit('ot-op', { roomId: ROOM, message });
               }
             }, delay);
           },
@@ -141,10 +219,7 @@ class Participant {
           },
         });
 
-        socket.on('ot-op', (m) => this.client.receive(m));
-        socket.on('ot-ack', (m) => this.client.receive(m));
-        socket.on('ot-error', () => { stats.otErrors++; });
-
+        this.rewire(socket, this.client);
         this.socket = socket;
         this.online = true;
         resolve(this);
@@ -155,6 +230,13 @@ class Participant {
         reject(new Error(`${this.name}: ${e.message}`));
       });
     });
+  }
+
+  /** Point a socket's inbound events at a client. Both paths need this. */
+  rewire(socket, client) {
+    socket.on('ot-op', (m) => client.receive(m));
+    socket.on('ot-ack', (m) => client.receive(m));
+    socket.on('ot-error', () => { stats.otErrors++; });
   }
 
   type() {
@@ -171,6 +253,11 @@ class Participant {
     if (!this.online) return;
     this.online = false;
     stats.dropped++;
+    // The client is told first. ot-core then buffers edits instead of handing
+    // them to a send that cannot deliver, which is what makes the unconfirmed
+    // work still exist at reconnect — and therefore what makes the catch-up
+    // route measurable at all.
+    this.client?.disconnect();
     this.socket?.close();
   }
 
@@ -193,7 +280,7 @@ class Participant {
 
 /* ------------------------------------------------------------------ run -- */
 
-console.log(`\n  chaos: ${CLIENTS} clients, ${DURATION_MS}ms, latency<=${LATENCY_MS}ms, drop=${DROP_RATE}/s, seed=${SEED}`);
+console.log(`\n  chaos: ${CLIENTS} clients, ${DURATION_MS}ms, latency<=${LATENCY_MS}ms, drop=${DROP_RATE}/s, seed=${SEED}, catch-up ${CATCHUP ? 'on' : 'OFF (snapshot only)'}`);
 console.log(`  room ${ROOM} on ${URL}\n`);
 
 const participants = [];
@@ -225,10 +312,33 @@ while (Date.now() - started < DURATION_MS) {
   if (Date.now() - lastChaos >= 1000) {
     lastChaos = Date.now();
     for (const p of participants) {
+      // Participant 0 never drops.
+      //
+      // A room exists only while at least one socket is in it: ot-rooms
+      // deletes it on the last leave, and dev-server configures no store, so
+      // flushSave has nowhere to write. A reconnect storm that happens to
+      // leave nobody connected for an instant therefore destroys the
+      // document, and the run that follows is measuring a room that restarted
+      // at revision 0 rather than anything about convergence.
+      //
+      // That is a real property of this server and worth its own fix — a
+      // grace period before eviction, or a store in the dev path. Pinning one
+      // client keeps it out of the measurement meanwhile, and matches how a
+      // shared document is actually used: somebody is usually still in it.
+      if (p.index === 0) continue;
+
       if (p.online && chance(DROP_RATE)) p.drop();
       // An offline client comes back fairly quickly; the interesting window is
       // the one where it was away, not how long it stays away.
-      else if (!p.online && chance(0.5)) await p.restore();
+      //
+      // Not awaited. Awaiting here puts every reconnection in a queue behind
+      // the one before it, so a sweep that finds ten clients offline spends
+      // ten handshakes in series and the chaos loop stops running while it
+      // does. It also misrepresents the thing being tested: when a network
+      // blips, clients come back at once, and a reconnect storm arriving
+      // together is harder on the server than a tidy procession. restore()
+      // swallows its own failures, so nothing here goes unhandled.
+      else if (!p.online && chance(0.5)) void p.restore();
     }
     const up = participants.filter((p) => p.online).length;
     process.stdout.write(`\r  t=${((Date.now() - started) / 1000).toFixed(0)}s  online ${up}/${CLIENTS}  edits ${stats.issued}  drops ${stats.dropped}   `);
@@ -239,7 +349,10 @@ while (Date.now() - started < DURATION_MS) {
 
 console.log('\n\n  chaos over — restoring everyone and letting it settle');
 
-for (const p of participants) await p.restore();
+// Concurrently, for the same reason the sweep is: in series, sixteen clients
+// each able to spend ten seconds failing to connect is a settle phase longer
+// than the chaos it follows.
+await Promise.all(participants.map((p) => p.restore()));
 
 /*
  * Quiescence, not a guessed sleep. Every client reports whether it is
@@ -290,6 +403,7 @@ console.log(`\n  ── result ────────────────�
 console.log(`  clients              ${online.length}/${CLIENTS} online at the end`);
 console.log(`  edits issued         ${stats.issued}`);
 console.log(`  deliberate drops     ${stats.dropped}  (rejoins ${stats.rejoined})`);
+console.log(`  rejoin path          ${stats.caughtUp} caught up, ${stats.snapshotFallbacks} fell back to a snapshot, ${stats.catchUpRejected} unusable`);
 console.log(`  ot errors            ${stats.otErrors}  (unconfirmed discarded ${stats.discarded})`);
 console.log(`  unsettled at cutoff  ${unsettled}`);
 console.log(`  server document      ${truth.length} chars at revision ${observer.client.revision}`);

@@ -16,6 +16,8 @@ const ACTIONS = {
     INIT: 'ot-init', // server -> client: the document and its revision
     OPERATION: 'ot-op', // client -> server, and server -> everyone else
     ACK: 'ot-ack', // server -> author: your edit landed, at this revision
+    RESYNC: 'ot-resync', // client -> server: I am at revision N, what did I miss?
+    MISSED: 'ot-missed', // server -> client: the operations after N, so it can rebase what it was holding
     OT_ERROR: 'ot-error', // server -> client: rejected, with a reason
     CURSOR: 'ot-cursor', // presence, deliberately off the operation channel
 };

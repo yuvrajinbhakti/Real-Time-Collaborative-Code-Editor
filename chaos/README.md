@@ -70,46 +70,44 @@ every green result it ever produced was worthless. Same reasoning as `ot-core`
 shipping a deliberately broken transform beside its fuzzer: the red run is what
 makes the green one mean anything.
 
-## A measured run
+## What catch-up is worth
 
-40 clients, 25s, latency up to 400ms, 12% chance per client per second of being
-dropped, seed 7:
+The server answers `ot-resync` now: a client says where it got to and gets the
+operations after it, so `Client.reconnect(missed)` can rebase what it was
+holding and re-send what was in flight. `CATCHUP=0` forces the old path — a
+whole fresh snapshot, everything unconfirmed discarded — which is what makes
+the difference measurable rather than asserted.
+
+Same chaos, 16 clients, 10s, latency to 200ms, 12% drop per client per second:
 
 ```
-clients              40/40 online at the end
-edits issued         3416
-deliberate drops     94  (rejoins 94)
-ot errors            0
-unsettled at cutoff  0
-server document      3315 chars at revision 3201
-
-ok    all 40 replicas match the server exactly
-
-edits typed          3416
-edits in final doc   3204
-lost to reconnect    212  (6.2%)
+catch-up OFF (snapshot only)        catch-up ON (ot-resync)
+  11 drops, 0 caught up               6 drops, 6 caught up
+  571 typed / 562 survived            328 typed / 328 survived
+  9 lost  (1.6%)                      0 lost  (0.0%)
+  all 16 replicas match the server    all 16 replicas match the server
 ```
 
-## The 6.2%, and why it is reported rather than asserted
+Both converge — that was never the question. What changes is whether the work
+a client was holding when its socket died still exists afterwards. Edit counts
+differ between the two runs because reconnect cost differs; the loss rate is
+the comparable number.
 
-Every surviving edit is one marker character in the final document — one
-distinct character per author, because a multi-character token can be split
-down the middle by another client's insert and a split token is
-indistinguishable from a lost one. Counting markers per author against what
-that author typed turns "some edits are lost on reconnect" into a number.
+## Known limits
 
-That number is the cost of a route this server does not have. `ot-core`'s
-`Server` exposes `since(revision)` — give it a revision and it returns the
-history after it, which is what `Client.reconnect(missed)` wants so a client
-can catch up from where it left off and re-send what was in flight. Neither
-`ot-rooms.js` nor `dev-server.js` ever calls it. The only way back in is
-`ot-sync` → a whole fresh snapshot, so anything unconfirmed at the moment of
-the drop is gone.
+Past roughly 400ms of injected latency combined with a drop rate near 0.25, a
+run becomes unreliable in a way that is not yet understood: the main loop
+stalls, clients sit in `awaiting-with-buffer`, and the room comes back at
+revision 0 with the document gone. Part of it is understood — a room lives
+only while a socket is in it, `ot-rooms` deletes it on the last leave, and
+`dev-server` configures no store, so a moment with nobody connected destroys
+the document. Participant 0 never drops in order to hold the room open, which
+removes that cause, and the failure still appears at extreme settings. The
+numbers above are from settings that reproduce; harsher ones are measuring the
+harness as much as the server, and are not quoted.
 
-Losing unconfirmed work on a cold rejoin is therefore the protocol working as
-built, not a bug — which is why the harness reports it instead of failing on
-it. Wire `since()` to a socket event and this number should fall toward zero;
-the harness will say by how much.
+Worth fixing before trusting a harsher run: a grace period before a room is
+evicted, or a store configured in the dev path.
 
 ## Infrastructure chaos
 
