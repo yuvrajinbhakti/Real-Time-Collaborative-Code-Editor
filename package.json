@@ -94,7 +94,9 @@
     "docker:logs": "docker-compose logs -f",
     "docker:logs:app": "docker-compose logs -f app",
     "docker:clean": "docker system prune -af && docker volume prune -f",
-    "test:convergence": "node test-convergence.mjs local"
+    "test:convergence": "node test-convergence.mjs local",
+    "chaos": "node chaos/chaos.mjs",
+    "chaos:selftest": "SELFTEST=1 node chaos/chaos.mjs"
   },
   "eslintConfig": {
     "extends": [
