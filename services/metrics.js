@@ -14,12 +14,18 @@
  *
  * ## What is measured, and why these
  *
- * Default process metrics, plus the four numbers that would actually tell you
+ * Default process metrics, plus the five numbers that would actually tell you
  * something is wrong with a collaborative editor:
  *
  *   - **operations, by outcome.** A rising `rejected` rate means clients are
  *     falling too far behind to rebase — the failure that compaction causes if
  *     the retention window is too small.
+ *   - **catch-ups, by outcome.** The same signal seen from the reconnect side.
+ *     A client that asks what it missed and is told to take a whole snapshot
+ *     instead has lost whatever it had in flight, and the usual reason is that
+ *     the room compacted past the revision it was holding. `snapshot` rising
+ *     against `caught-up` is the retention window being too small, measured
+ *     where users actually feel it.
  *   - **how long an operation takes to order.** Rebasing is linear in how far
  *     behind an operation was written, so this is the number that grows when a
  *     room accumulates history.
@@ -60,6 +66,15 @@ function init() {
   metrics.operations = new client.Counter({
     name: 'collab_operations_total',
     help: 'Edits received by the server, by what happened to them',
+    labelNames: ['outcome'],
+    registers: [registry],
+  });
+
+  // No label for the revision asked from, or the room: both are client-supplied
+  // and unbounded, the same cardinality trap the note above describes.
+  metrics.catchUps = new client.Counter({
+    name: 'collab_catch_ups_total',
+    help: 'Reconnects asking what they missed, by what the server could give them',
     labelNames: ['outcome'],
     registers: [registry],
   });
@@ -112,6 +127,19 @@ function recordOperation(outcome, seconds) {
   if (typeof seconds === 'number') metrics.operationSeconds.observe(seconds);
 }
 
+/**
+ * One reconnect asking what it missed.
+ *
+ * `caught-up` got the operations after its revision and kept what it was
+ * holding; `snapshot` was sent the whole document instead and lost it;
+ * `rejected` was refused outright, which is the rate limit or a revision this
+ * server never issued.
+ */
+function recordCatchUp(outcome) {
+  if (!registry) return;
+  metrics.catchUps.inc({ outcome });
+}
+
 function setSockets(count) {
   if (registry) metrics.sockets.set(count);
 }
@@ -142,6 +170,7 @@ module.exports = {
   init,
   enabled,
   recordOperation,
+  recordCatchUp,
   setSockets,
   observeRooms,
   text,

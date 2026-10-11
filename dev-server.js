@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const ACTIONS = require('./src/Actions');
+const collabSocket = require('./collab-socket');
 const otRooms = require('./ot-rooms');
 
 const app = express();
@@ -29,133 +29,10 @@ app.use((req, res, next) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-const userSocketMap = {};
-function getAllConnectedClients(roomId) {
-  return Array.from(io.sockets.adapter.rooms.get(roomId) || []).map(
-    (socketId) => {
-      return {
-        socketId,
-        username: userSocketMap[socketId],
-      };
-    }
-  );
-}
-
-io.on('connection', (socket) => {
-  console.log('Socket connected:', socket.id);
-
-  socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
-    userSocketMap[socket.id] = username;
-    socket.join(roomId);
-    const clients = getAllConnectedClients(roomId);
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(ACTIONS.JOINED, {
-        clients,
-        username,
-        socketId: socket.id,
-      });
-    });
-  });
-
-  // Operations, not documents. See ot-rooms.js — this used to
-  // rebroadcast the whole file, so concurrent edits overwrote each
-  // other instead of merging.
-  // The editor asks for the document when it is ready to receive it.
-  // Emitting it on JOIN alone raced the client: the React component that
-  // listens for it mounts after the socket connects, so the broadcast
-  // could arrive before anything was listening and the editor stayed
-  // empty. Asking is not subject to that ordering.
-  socket.on(ACTIONS.SYNC, async ({ roomId }) => {
-    // Wrapped because this handler is async: a rejection here is an
-    // unhandled promise rejection, which Node treats as fatal. One client
-    // asking for a room that cannot be loaded should not end the process
-    // for everybody else in every other room.
-    try {
-        // Awaited because a cold room is read back from the store first.
-        // Only this path awaits; operations stay synchronous so nothing can
-        // interleave in the ordering.
-        const opening = await otRooms.join(roomId, socket.id, userSocketMap[socket.id]);
-        socket.emit(ACTIONS.INIT, opening);
-    } catch (error) {
-      console.error('[ot] sync failed:', error.message);
-      socket.emit(ACTIONS.OT_ERROR, { reason: 'could not open the room' });
-    }
-  });
-
-  /*
-   * A reconnecting client asking what it missed.
-   *
-   * The cheap way back into a room. SYNC hands over a whole fresh snapshot,
-   * which is correct but makes the client drop everything it had in flight
-   * when the socket died; this hands back just the operations after the
-   * revision it reached, so it can rebase what it was holding and keep it.
-   *
-   * Synchronous, unlike SYNC: a room that is already open is the only case
-   * this answers, and `catchUp` says `resync` for every other — including a
-   * revision the room has compacted past, and anything the client sends that
-   * is not a revision this server issued. The fallback is the snapshot path,
-   * so the worst outcome is the behaviour that existed before this route.
-   */
-  socket.on(ACTIONS.RESYNC, async ({ roomId, revision }) => {
-    const result = otRooms.catchUp(roomId, socket.id, revision);
-
-    if (result.error) {
-      socket.emit(ACTIONS.OT_ERROR, { reason: result.error });
-      return;
-    }
-
-    if (result.resync) {
-      try {
-        const opening = await otRooms.join(roomId, socket.id, userSocketMap[socket.id]);
-        socket.emit(ACTIONS.INIT, opening);
-      } catch (error) {
-        console.error('[ot] resync fallback failed:', error.message);
-        socket.emit(ACTIONS.OT_ERROR, { reason: 'could not open the room' });
-      }
-      return;
-    }
-
-    socket.emit(ACTIONS.MISSED, { missed: result.missed, revision: result.revision });
-  });
-
-  socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {
-    const result = otRooms.operation(roomId, socket.id, message);
-    if (result.error) {
-      socket.emit(ACTIONS.OT_ERROR, { reason: result.error });
-      return;
-    }
-    // Broadcast before acknowledging; the other order loses one
-    // operation per collision.
-    if (result.broadcast) {
-      socket.in(roomId).emit(ACTIONS.OPERATION, result.broadcast);
-    }
-    socket.emit(ACTIONS.ACK, result.ack);
-  });
-
-  socket.on(ACTIONS.CURSOR, ({ roomId, selection, revision }) => {
-    const username = userSocketMap[socket.id];
-    otRooms.cursor(roomId, socket.id, { selection, revision, username });
-    socket.in(roomId).emit(ACTIONS.CURSOR, {
-      socketId: socket.id,
-      selection,
-      revision,
-      username,
-    });
-  });
-
-  socket.on('disconnecting', () => {
-    for (const id of socket.rooms) otRooms.leave(id, socket.id);
-    const rooms = [...socket.rooms];
-    rooms.forEach((roomId) => {
-      socket.in(roomId).emit(ACTIONS.DISCONNECTED, {
-        socketId: socket.id,
-        username: userSocketMap[socket.id],
-      });
-    });
-    delete userSocketMap[socket.id];
-    socket.leave();
-  });
-});
+// The protocol itself lives in collab-socket.js, shared with the other
+// server. It was duplicated in both for a long time and the copies drifted;
+// that file says how.
+collabSocket.attach(io);
 
 const PORT = process.env.PORT || 5000;
 // ot-core is an ES module and this file is CommonJS on Node 18, so it is loaded

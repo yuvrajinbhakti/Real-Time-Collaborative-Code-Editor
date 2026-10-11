@@ -27,13 +27,18 @@ node server.js              # in one shell
 npm run chaos               # in another
 ```
 
-Point it at `server.js` — the one `npm run start:ai` runs in production, and so
-the only one whose results mean anything about the deployed service. It needs no
-Redis; without `REDIS_URL` it keeps documents in memory and everything the
-harness asserts still holds. `dev-server.js` is the smaller rig and also works,
-but it is not what ships, and the two have drifted before: `ot-resync` lived in
-`dev-server.js` alone for a while, so a harness pointed there reported a
-catch-up rate production could not actually deliver.
+Point it at `server.js` — the one `npm run start:ai` runs in production. It needs
+no Redis; without `REDIS_URL` it keeps documents in memory and everything the
+harness asserts still holds.
+
+`dev-server.js` now gives the same answers, because both servers get their
+protocol from `collab-socket.js` and there is only one copy of it to test. That
+was not true until recently. `ot-resync` lived in `dev-server.js` alone for a
+while, and a harness pointed there certified a catch-up rate production could
+not deliver — a convergence test aimed at the wrong binary, which is the same
+mistake as the load test it was built to replace. Prefer `server.js` anyway:
+sharing the protocol does not make the Redis adapter, the metrics registry or
+the cluster setup identical, and those are what differ under load.
 
 Knobs, all environment variables:
 
