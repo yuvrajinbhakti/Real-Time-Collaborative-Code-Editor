@@ -23,9 +23,17 @@ So this is a correctness harness wearing a load test's clothes.
 ## Running it
 
 ```bash
-node dev-server.js          # in one shell
+node server.js              # in one shell
 npm run chaos               # in another
 ```
+
+Point it at `server.js` — the one `npm run start:ai` runs in production, and so
+the only one whose results mean anything about the deployed service. It needs no
+Redis; without `REDIS_URL` it keeps documents in memory and everything the
+harness asserts still holds. `dev-server.js` is the smaller rig and also works,
+but it is not what ships, and the two have drifted before: `ot-resync` lived in
+`dev-server.js` alone for a while, so a harness pointed there reported a
+catch-up rate production could not actually deliver.
 
 Knobs, all environment variables:
 
@@ -78,36 +86,41 @@ holding and re-send what was in flight. `CATCHUP=0` forces the old path — a
 whole fresh snapshot, everything unconfirmed discarded — which is what makes
 the difference measurable rather than asserted.
 
-Same chaos, 16 clients, 10s, latency to 200ms, 12% drop per client per second:
+Against `server.js`, 16 clients, 10s, latency to 200ms, 12% drop per client per
+second, `SEED=3`:
 
 ```
 catch-up OFF (snapshot only)        catch-up ON (ot-resync)
-  11 drops, 0 caught up               6 drops, 6 caught up
-  571 typed / 562 survived            328 typed / 328 survived
-  9 lost  (1.6%)                      0 lost  (0.0%)
-  all 16 replicas match the server    all 16 replicas match the server
+  9 drops, 0 caught up               17 drops, 17 caught up
+  566 typed / 560 survived           574 typed / 574 survived
+  6 lost  (1.1%)                      0 lost  (0.0%)
+  all 16 replicas match the server   all 16 replicas match the server
 ```
 
-Both converge — that was never the question. What changes is whether the work
-a client was holding when its socket died still exists afterwards. Edit counts
-differ between the two runs because reconnect cost differs; the loss rate is
-the comparable number.
+Both converge — that was never the question. What changes is whether the work a
+client was holding when its socket died still exists afterwards.
+
+The two columns are not one experiment run twice. Dropping is sampled per client
+per second, so the runs diverge in timing the moment their reconnect costs
+differ, and drop and edit counts diverge with them. The loss *rate* is the
+comparable number.
 
 ## Known limits
 
 Past roughly 400ms of injected latency combined with a drop rate near 0.25, a
 run becomes unreliable in a way that is not yet understood: the main loop
 stalls, clients sit in `awaiting-with-buffer`, and the room comes back at
-revision 0 with the document gone. Part of it is understood — a room lives
-only while a socket is in it, `ot-rooms` deletes it on the last leave, and
-`dev-server` configures no store, so a moment with nobody connected destroys
-the document. Participant 0 never drops in order to hold the room open, which
-removes that cause, and the failure still appears at extreme settings. The
-numbers above are from settings that reproduce; harsher ones are measuring the
-harness as much as the server, and are not quoted.
+revision 0 with the document gone. Part of it is understood — a room lives only
+while a socket is in it, `ot-rooms` deletes it on the last leave, and with no
+`REDIS_URL` set there is no store to read it back from, so a moment with nobody
+connected destroys the document. Participant 0 never drops in order to hold the
+room open, which removes that cause, and the failure still appears at extreme
+settings. The numbers above are from settings that reproduce; harsher ones are
+measuring the harness as much as the server, and are not quoted.
 
 Worth fixing before trusting a harsher run: a grace period before a room is
-evicted, or a store configured in the dev path.
+evicted. Running the server with `REDIS_URL` set also avoids it, at the cost of
+no longer testing the configuration most people deploy.
 
 ## Infrastructure chaos
 

@@ -626,6 +626,42 @@ io.on('connection', (socket) => {
       }
     });
 
+    /*
+     * A reconnecting client asking what it missed.
+     *
+     * The cheap way back into a room. SYNC hands over a whole fresh snapshot,
+     * which is correct but makes the client drop everything it had in flight
+     * when the socket died; this hands back just the operations after the
+     * revision it reached, so it can rebase what it was holding and keep it.
+     *
+     * Synchronous, unlike SYNC: a room that is already open is the only case
+     * this answers, and `catchUp` says `resync` for every other — including a
+     * revision the room has compacted past, and anything the client sends that
+     * is not a revision this server issued. The fallback is the snapshot path,
+     * so the worst outcome is the behaviour that existed before this route.
+     */
+    socket.on(ACTIONS.RESYNC, async ({ roomId, revision }) => {
+        const result = otRooms.catchUp(roomId, socket.id, revision);
+
+        if (result.error) {
+            socket.emit(ACTIONS.OT_ERROR, { reason: result.error });
+            return;
+        }
+
+        if (result.resync) {
+            try {
+                const opening = await otRooms.join(roomId, socket.id, userSocketMap[socket.id]);
+                socket.emit(ACTIONS.INIT, opening);
+            } catch (error) {
+                console.error('[ot] resync fallback failed:', error.message);
+                socket.emit(ACTIONS.OT_ERROR, { reason: 'could not open the room' });
+            }
+            return;
+        }
+
+        socket.emit(ACTIONS.MISSED, { missed: result.missed, revision: result.revision });
+    });
+
     socket.on(ACTIONS.OPERATION, ({ roomId, message }) => {
         const startedAt = process.hrtime.bigint();
         const result = otRooms.operation(roomId, socket.id, message);
