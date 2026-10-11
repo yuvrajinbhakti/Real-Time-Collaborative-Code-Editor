@@ -21,7 +21,7 @@ AI_PROVIDER=gemini
 OPENAI_API_KEY=your_openai_api_key_here
 AI_PROVIDER=openai
 
-# Redis (Required for enhanced features)
+# Redis (optional — enables document persistence across restarts)
 REDIS_HOST=localhost
 REDIS_PORT=6379
 ```

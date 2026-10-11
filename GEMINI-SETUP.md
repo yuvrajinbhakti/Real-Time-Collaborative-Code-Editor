@@ -18,7 +18,7 @@ Create a `.env` file in your project root:
 GEMINI_API_KEY=your_gemini_api_key_here
 AI_PROVIDER=gemini
 
-# Redis (Required for real-time features)
+# Redis (optional — enables document persistence across restarts)
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
@@ -27,7 +27,10 @@ PORT=5000
 NODE_ENV=development
 ```
 
-### 3. **Start Redis (Required)**
+### 3. **Start Redis (optional)**
+Only needed if you want rooms to survive a restart. With neither `REDIS_URL`
+nor `REDIS_HOST` set, persistence stays off and everything else — editing,
+sync, AI review — works exactly the same.
 ```bash
 # Using Docker (Easiest)
 docker run -d --name redis -p 6379:6379 redis:alpine
@@ -38,8 +41,10 @@ redis-server
 
 ### 4. **Start the Application**
 ```bash
-npm run start:enhanced
+npm run start:ai
 ```
+`start:ai` runs `server.js`, which is what deploys. `start:enhanced` is a
+different server and will not behave the same.
 
 ## 💰 **Cost Comparison**
 
