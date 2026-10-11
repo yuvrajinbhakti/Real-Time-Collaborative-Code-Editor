@@ -60,7 +60,14 @@ services:
         - package.json
         - package-lock.json
         - .node-version
-        - server*.js
+        # Every root-level .js, not `server*.js`. That pattern matched the
+        # entrypoint and missed everything it loads — ot-rooms.js, ot-store.js
+        # and collab-socket.js are the OT engine, the persistence layer and the
+        # whole socket protocol, and a commit touching only those would not have
+        # deployed. The asymmetry decides it: an extra build costs minutes, a
+        # skipped one leaves production silently running last week's protocol.
+        # `test*`, `debug*` and `fix*` are still excluded below.
+        - "*.js"
         - config/**
         - services/**
         - routes/**
