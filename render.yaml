@@ -10,6 +10,12 @@ services:
     healthCheckPath: /health
     autoDeploy: true
     env:
+      # Pinned, not a floor. `engines.node: ">=18"` let Render resolve to the
+      # newest Node (26), whose npm validates the lockfile against every
+      # platform — and this lockfile only carries darwin-arm64 binaries for
+      # sharp and msgpackr, so `npm ci` refused to install.
+      - key: NODE_VERSION
+        value: "22"
       - key: NODE_ENV
         value: production
       - key: PORT
@@ -53,6 +59,7 @@ services:
         - public/**
         - package.json
         - package-lock.json
+        - .node-version
         - server*.js
         - config/**
         - services/**
