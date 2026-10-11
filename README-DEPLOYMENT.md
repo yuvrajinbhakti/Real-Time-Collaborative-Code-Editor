@@ -20,11 +20,15 @@ railway init
 railway up
 ```
 
-### 2. **Render** (Great for beginners)
-1. Connect your GitHub repo
-2. Choose "Web Service"
-3. Build command: `npm run build`
-4. Start command: `npm start`
+### 2. **Render** — what this project actually runs on
+Connect the repo as a Blueprint and `render.yaml` supplies everything: build
+and start commands, the pinned Node version, and the path filter deciding when
+a push rebuilds. Read that file rather than copying commands from here.
+
+Setting it up by hand instead needs `npm ci --legacy-peer-deps && npm run
+build:react` to build and `npm run start:ai` to start. Not `npm start` — that
+one is `npm run build && node server.js`, which rebuilds the bundle on every
+boot and turns a restart into a multi-minute outage.
 
 ### 3. **Heroku** (Classic choice)
 ```bash

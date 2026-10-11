@@ -192,11 +192,10 @@ main() {
     
     echo ""
     print_info "🚀 Deployment files available:"
-    echo "   - render.yaml (automatic configuration)"
+    echo "   - render.yaml (authoritative configuration, commented)"
     echo "   - Dockerfile.render (optimized for Render)"
-    echo "   - Dockerfile.minimal (fallback option)"
     echo ""
-    print_info "📖 Check RENDER-DEPLOYMENT-GUIDE.md for detailed instructions"
+    print_info "📖 render.yaml documents the build itself; there is no separate guide"
 }
 
 # Run main function

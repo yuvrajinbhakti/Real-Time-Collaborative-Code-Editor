@@ -148,5 +148,6 @@ The `package.json` contains a robust suite of scripts to start the app in differ
 
 ## 8. Deployment & CI/CD
 - **Nginx configuration**: Includes an `nginx.conf` designed for reverse proxying traffic and mapping `/health`.
-- The root includes multiple markdown docs related to deployment: `DEPLOYMENT-READY.md`, `DOCKER-DEPLOYMENT.md`, `RENDER-DEPLOYMENT-GUIDE.md`. These indicate the project has been fine-tuned to be deployed quickly either via Docker Swarm, or automatically on Render/Railway.
+- **Render**: `render.yaml` is the authoritative configuration — runtime, build and start commands, the pinned Node version and the path filter that decides when a push rebuilds. It is commented where a setting is not self-explanatory. The prose guides that used to sit beside it described a Docker-based setup the service no longer uses, and were removed rather than corrected.
+- **Docker**: `DOCKER-DEPLOYMENT.md`, alongside `Dockerfile`, `Dockerfile.render` and the two compose files.
 - Includes `fix-build.sh` and `validate-deployment.sh` to check for missing dependencies in a CI/CD pipeline prior to completing a build step.
